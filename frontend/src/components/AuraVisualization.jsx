@@ -1,14 +1,14 @@
-import React, { useRef, useEffect } from 'react';
-import Sketch from 'react-p5';
+import React, { useRef, useEffect, useMemo } from 'react';
 
-const AuraVisualization = ({ sentiment, sentimentType, energy, dominantEmotion, keywords = [] }) => {
+const AuraVisualization = ({ sentiment = 0, sentimentType = 'neutral', energy = 0.5, dominantEmotion = 'neutral', keywords = [] }) => {
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
   const particlesRef = useRef([]);
   const flowFieldRef = useRef([]);
-  const timeRef = useRef(0);
-  const targetColorRef = useRef([150, 150, 150]);
+  const zoffRef = useRef(0);
   const currentColorRef = useRef([150, 150, 150]);
   
-  // Enhanced emotion color palette with gradients
+  // Emotion color palette with gradients
   const emotionColors = {
     joy: {
       primary: [255, 223, 0],
@@ -47,239 +47,401 @@ const AuraVisualization = ({ sentiment, sentimentType, energy, dominantEmotion, 
     }
   };
 
-  const setup = (p5, canvasParentRef) => {
-    const canvas = p5.createCanvas(window.innerWidth, window.innerHeight);
-    canvas.parent(canvasParentRef);
-    p5.colorMode(p5.RGB, 255, 255, 255, 100);
-    p5.blendMode(p5.ADD);
+  // Improved Perlin Noise implementation
+  const PerlinNoise = useMemo(() => {
+    class PerlinNoiseGenerator {
+      constructor() {
+        this.perm = new Array(512);
+        this.gradP = new Array(512);
+        this.grad3 = [
+          [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
+          [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
+          [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
+        ];
+        
+        // Initialize permutation table
+        const p = [];
+        for (let i = 0; i < 256; i++) {
+          p[i] = Math.floor(Math.random() * 256);
+        }
+        
+        for(let i = 0; i < 512; i++) {
+          this.perm[i] = p[i & 255];
+          this.gradP[i] = this.grad3[this.perm[i] % 12];
+        }
+      }
+
+      fade(t) {
+        return t * t * t * (t * (t * 6 - 15) + 10);
+      }
+
+      lerp(a, b, t) {
+        return (1 - t) * a + t * b;
+      }
+
+      dot(g, x, y) {
+        return g[0] * x + g[1] * y;
+      }
+
+      noise2D(x, y) {
+        // Find unit grid cell containing point
+        let X = Math.floor(x);
+        let Y = Math.floor(y);
+        
+        // Get relative xy coordinates of point within that cell
+        x = x - X;
+        y = y - Y;
+        
+        // Wrap the integer cells at 255
+        X = X & 255;
+        Y = Y & 255;
+        
+        // Calculate noise contributions from each of the four corners
+        const n00 = this.dot(this.gradP[X + this.perm[Y]], x, y);
+        const n01 = this.dot(this.gradP[X + this.perm[Y + 1]], x, y - 1);
+        const n10 = this.dot(this.gradP[X + 1 + this.perm[Y]], x - 1, y);
+        const n11 = this.dot(this.gradP[X + 1 + this.perm[Y + 1]], x - 1, y - 1);
+        
+        // Compute the fade curve value for x
+        const u = this.fade(x);
+        
+        // Interpolate the four results
+        const nx0 = this.lerp(n00, n10, u);
+        const nx1 = this.lerp(n01, n11, u);
+        
+        // Compute the fade curve value for y
+        const v = this.fade(y);
+        
+        // Interpolate the two last results
+        return this.lerp(nx0, nx1, v);
+      }
+
+      // Multi-octave Perlin noise for more organic patterns
+      octaveNoise(x, y, octaves = 4, persistence = 0.5) {
+        let total = 0;
+        let frequency = 1;
+        let amplitude = 1;
+        let maxValue = 0;
+        
+        for(let i = 0; i < octaves; i++) {
+          total += this.noise2D(x * frequency, y * frequency) * amplitude;
+          maxValue += amplitude;
+          amplitude *= persistence;
+          frequency *= 2;
+        }
+        
+        return total / maxValue;
+      }
+    }
     
-    // Initialize enhanced particle system
-    const particleCount = 2000; // Increased for more fluid effect
+    return new PerlinNoiseGenerator();
+  }, []);
+
+  // Particle class with enhanced properties
+  class Particle {
+    constructor(canvas) {
+      this.canvas = canvas;
+      this.reset();
+    }
+
+    reset() {
+      this.x = Math.random() * this.canvas.width;
+      this.y = Math.random() * this.canvas.height;
+      this.prevX = this.x;
+      this.prevY = this.y;
+      this.vx = 0;
+      this.vy = 0;
+      this.ax = 0;
+      this.ay = 0;
+      this.maxSpeed = 2;
+      this.life = 1;
+      this.maxLife = 1;
+      this.size = Math.random() * 1.5 + 0.5;
+      this.hue = Math.random() * 30 - 15;
+    }
+
+    follow(flowField, cols, scale) {
+      const x = Math.floor(this.x / scale);
+      const y = Math.floor(this.y / scale);
+      const index = x + y * cols;
+      
+      if (flowField[index]) {
+        const force = flowField[index];
+        this.applyForce(force.x, force.y);
+      }
+    }
+
+    applyForce(fx, fy) {
+      this.ax += fx;
+      this.ay += fy;
+    }
+
+    update(energy, sentiment) {
+      // Update velocity
+      this.vx += this.ax;
+      this.vy += this.ay;
+      
+      // Dynamic max speed based on energy and sentiment
+      this.maxSpeed = 2 + energy * 4 + Math.abs(sentiment) * 2;
+      
+      // Limit velocity
+      const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+      if (currentSpeed > this.maxSpeed) {
+        this.vx = (this.vx / currentSpeed) * this.maxSpeed;
+        this.vy = (this.vy / currentSpeed) * this.maxSpeed;
+      }
+      
+      // Store previous position for trail
+      this.prevX = this.x;
+      this.prevY = this.y;
+      
+      // Update position
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      // Reset acceleration
+      this.ax = 0;
+      this.ay = 0;
+      
+      // Update life
+      this.life -= 0.002 * (1 + energy * 0.5);
+      
+      // Handle edges (wrap around)
+      if (this.x < 0) {
+        this.x = this.canvas.width;
+        this.prevX = this.canvas.width;
+      } else if (this.x > this.canvas.width) {
+        this.x = 0;
+        this.prevX = 0;
+      }
+      
+      if (this.y < 0) {
+        this.y = this.canvas.height;
+        this.prevY = this.canvas.height;
+      } else if (this.y > this.canvas.height) {
+        this.y = 0;
+        this.prevY = 0;
+      }
+      
+      // Reset if dead
+      if (this.life <= 0) {
+        this.reset();
+      }
+    }
+
+    draw(ctx, baseColor, sentiment, energy) {
+      const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+      const normalizedSpeed = speed / this.maxSpeed;
+      
+      // Calculate dynamic color
+      let r = baseColor[0];
+      let g = baseColor[1];
+      let b = baseColor[2];
+      
+      // Apply sentiment color shift
+      if (sentiment > 0) {
+        // Warm colors for positive sentiment
+        r = Math.min(255, r + sentiment * 150 * normalizedSpeed);
+        g = Math.min(255, g + sentiment * 100);
+        b = Math.max(0, b - sentiment * 50);
+      } else if (sentiment < 0) {
+        // Cool colors for negative sentiment
+        r = Math.max(0, r - Math.abs(sentiment) * 100);
+        g = Math.max(0, g - Math.abs(sentiment) * 50);
+        b = Math.min(255, b + Math.abs(sentiment) * 150 * normalizedSpeed);
+      }
+      
+      // Add energy brightness
+      const energyBoost = energy * 80 * normalizedSpeed;
+      r = Math.min(255, r + energyBoost);
+      g = Math.min(255, g + energyBoost);
+      b = Math.min(255, b + energyBoost);
+      
+      // Add individual particle hue variation
+      r = Math.min(255, Math.max(0, r + this.hue));
+      g = Math.min(255, Math.max(0, g + this.hue));
+      b = Math.min(255, Math.max(0, b + this.hue));
+      
+      // Calculate alpha based on life and speed
+      const baseAlpha = 0.05;
+      const speedAlpha = normalizedSpeed * 0.3;
+      const lifeAlpha = this.life * 0.5;
+      const energyAlpha = energy * 0.2;
+      const alpha = Math.min(1, baseAlpha + speedAlpha + lifeAlpha + energyAlpha);
+      
+      // Draw particle trail
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${alpha})`;
+      ctx.lineWidth = this.size * (1 + normalizedSpeed * 0.5);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(this.prevX, this.prevY);
+      ctx.lineTo(this.x, this.y);
+      ctx.stroke();
+      
+      // Add glow effect for high energy or strong sentiment
+      if (energy > 0.7 || Math.abs(sentiment) > 0.7) {
+        ctx.strokeStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${alpha * 0.3})`;
+        ctx.lineWidth = this.size * 4;
+        ctx.beginPath();
+        ctx.moveTo(this.prevX, this.prevY);
+        ctx.lineTo(this.x, this.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    
+    // Setup canvas
+    const setupCanvas = () => {
+      canvas.width = width;
+      canvas.height = height;
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, width, height);
+    };
+    
+    setupCanvas();
+
+    // Initialize particles
+    const particleCount = 2500; // More particles for denser effect
     for (let i = 0; i < particleCount; i++) {
-      particlesRef.current.push({
-        x: p5.random(p5.width),
-        y: p5.random(p5.height),
-        prevX: p5.random(p5.width),
-        prevY: p5.random(p5.height),
-        vel: p5.createVector(0, 0),
-        acc: p5.createVector(0, 0),
-        maxSpeed: p5.random(0.5, 2),
-        size: p5.random(0.5, 2),
-        lifespan: 255,
-        hue: 0
-      });
+      particlesRef.current.push(new Particle(canvas));
     }
-    
-    // Initialize flow field grid
-    const cols = Math.floor(p5.width / 20);
-    const rows = Math.floor(p5.height / 20);
-    flowFieldRef.current = new Array(cols * rows);
-  };
 
-  const draw = (p5) => {
-    // Dynamic background fade based on energy
-    const bgAlpha = p5.map(energy, 0, 1, 40, 10); // More energy = more trails
-    p5.fill(0, bgAlpha);
-    p5.noStroke();
-    p5.rect(0, 0, p5.width, p5.height);
-    
-    // Update time for noise evolution
-    timeRef.current += 0.003 + (energy * 0.007);
-    
-    // Smooth color transitions
-    const emotionColor = emotionColors[dominantEmotion] || emotionColors.neutral;
-    targetColorRef.current = emotionColor.primary;
-    
-    // Lerp current color to target
-    for (let i = 0; i < 3; i++) {
-      currentColorRef.current[i] = p5.lerp(
-        currentColorRef.current[i],
-        targetColorRef.current[i],
-        0.05
-      );
-    }
-    
-    // Update flow field based on Perlin noise
-    const cols = Math.floor(p5.width / 20);
-    const rows = Math.floor(p5.height / 20);
-    const noiseScale = 0.001 + (energy * 0.002); // Dynamic noise scale
-    
-    for (let x = 0; x < cols; x++) {
+    // Flow field parameters
+    const scale = 20;
+    let cols = Math.floor(width / scale) + 1;
+    let rows = Math.floor(height / scale) + 1;
+
+    // Animation loop
+    const animate = () => {
+      // Create trail effect with adjustable fade
+      const fadeAlpha = 0.02 + (1 - energy) * 0.03;
+      ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
+      ctx.fillRect(0, 0, width, height);
+
+      // Update flow field
+      cols = Math.floor(width / scale) + 1;
+      rows = Math.floor(height / scale) + 1;
+      flowFieldRef.current = [];
+      
+      // Adjust noise increment based on energy and sentiment
+      const inc = 0.05 + Math.abs(sentiment) * 0.03 + energy * 0.02;
+      
       for (let y = 0; y < rows; y++) {
-        const index = x + y * cols;
-        
-        // Multi-octave Perlin noise for more organic movement
-        const noise1 = p5.noise(x * noiseScale, y * noiseScale, timeRef.current);
-        const noise2 = p5.noise(x * noiseScale * 2, y * noiseScale * 2, timeRef.current * 1.5);
-        const noise3 = p5.noise(x * noiseScale * 4, y * noiseScale * 4, timeRef.current * 2);
-        
-        // Combine octaves with sentiment influence
-        const combinedNoise = (noise1 * 0.6 + noise2 * 0.3 + noise3 * 0.1);
-        const angle = combinedNoise * p5.TWO_PI * 2 + (sentiment * p5.PI * 0.5);
-        
-        flowFieldRef.current[index] = p5.createVector(p5.cos(angle), p5.sin(angle));
-      }
-    }
-    
-    // Draw particles with enhanced effects
-    particlesRef.current.forEach((particle, index) => {
-      // Apply flow field forces
-      const x = Math.floor(particle.x / 20);
-      const y = Math.floor(particle.y / 20);
-      const index2d = x + y * cols;
-      
-      if (flowFieldRef.current[index2d]) {
-        const force = flowFieldRef.current[index2d].copy();
-        force.mult(0.1 + energy * 0.3); // Energy affects force strength
-        particle.acc.add(force);
-        
-        // Add spiral motion for positive sentiment
-        if (sentiment > 0.3) {
-          const spiralForce = p5.createVector(
-            p5.cos(timeRef.current * 2 + index * 0.01) * sentiment,
-            p5.sin(timeRef.current * 2 + index * 0.01) * sentiment
+        for (let x = 0; x < cols; x++) {
+          const index = x + y * cols;
+          
+          // Use Perlin noise for organic flow
+          const noiseValue = PerlinNoise.octaveNoise(
+            x * inc,
+            y * inc + zoffRef.current,
+            4,
+            0.5
           );
-          particle.acc.add(spiralForce.mult(0.05));
+          
+          // Base angle from noise
+          let angle = noiseValue * Math.PI * 4;
+          
+          // Add sentiment-based flow modifications
+          const centerX = cols / 2;
+          const centerY = rows / 2;
+          const dx = x - centerX;
+          const dy = y - centerY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
+          const normalizedDistance = distance / maxDistance;
+          
+          if (sentiment > 0) {
+            // Positive sentiment: outward spiral
+            const spiralAngle = Math.atan2(dy, dx);
+            angle += spiralAngle * sentiment * 0.5;
+            angle += normalizedDistance * sentiment * Math.PI * 0.5;
+          } else if (sentiment < 0) {
+            // Negative sentiment: inward vortex with turbulence
+            const vortexAngle = Math.atan2(dy, dx);
+            angle -= vortexAngle * Math.abs(sentiment) * 0.5;
+            angle += Math.sin(zoffRef.current * 5 + normalizedDistance * 10) * Math.abs(sentiment) * 0.5;
+          }
+          
+          // Add energy-based pulsation
+          if (energy > 0.5) {
+            angle += Math.sin(zoffRef.current * 3 + distance * 0.1) * energy * 0.3;
+          }
+          
+          // Create force vector
+          const magnitude = 0.5 + energy * 0.5 + Math.abs(sentiment) * 0.3;
+          flowFieldRef.current[index] = {
+            x: Math.cos(angle) * magnitude,
+            y: Math.sin(angle) * magnitude
+          };
         }
-        
-        // Add turbulence for negative sentiment
-        if (sentiment < -0.3) {
-          const turbulence = p5.createVector(
-            p5.random(-1, 1) * Math.abs(sentiment),
-            p5.random(-1, 1) * Math.abs(sentiment)
-          );
-          particle.acc.add(turbulence.mult(0.1));
-        }
       }
       
-      // Update physics
-      particle.vel.add(particle.acc);
-      particle.vel.limit(particle.maxSpeed * (1 + energy * 2));
-      particle.prevX = particle.x;
-      particle.prevY = particle.y;
-      particle.x += particle.vel.x;
-      particle.y += particle.vel.y;
-      particle.acc.mult(0);
-      
-      // Wrap around edges with smooth transition
-      if (particle.x < 0) {
-        particle.x = p5.width;
-        particle.prevX = p5.width;
-      }
-      if (particle.x > p5.width) {
-        particle.x = 0;
-        particle.prevX = 0;
-      }
-      if (particle.y < 0) {
-        particle.y = p5.height;
-        particle.prevY = p5.height;
-      }
-      if (particle.y > p5.height) {
-        particle.y = 0;
-        particle.prevY = 0;
-      }
-      
-      // Calculate color based on multiple factors
-      const velocityMag = particle.vel.mag();
-      const colorIntensity = p5.map(velocityMag, 0, particle.maxSpeed * 2, 0, 1);
-      
-      // Base color with emotion influence
-      let r = currentColorRef.current[0];
-      let g = currentColorRef.current[1];
-      let b = currentColorRef.current[2];
-      
-      // Sentiment modulation
-      r = r + (sentiment * 50) + (colorIntensity * 30);
-      g = g + (sentiment * 30) - (Math.abs(sentiment) * 20);
-      b = b - (sentiment * 30) + (energy * 50);
-      
-      // Constrain colors
-      r = p5.constrain(r, 0, 255);
-      g = p5.constrain(g, 0, 255);
-      b = p5.constrain(b, 0, 255);
-      
-      // Draw particle trail with glow effect
-      const alpha = p5.map(energy, 0, 1, 20, 80) * (particle.lifespan / 255);
-      
-      // Main trail
-      p5.strokeWeight(particle.size * (1 + energy * 0.5));
-      p5.stroke(r, g, b, alpha);
-      p5.line(particle.prevX, particle.prevY, particle.x, particle.y);
-      
-      // Glow effect for high energy
-      if (energy > 0.6) {
-        p5.strokeWeight(particle.size * 3);
-        p5.stroke(r, g, b, alpha * 0.3);
-        p5.line(particle.prevX, particle.prevY, particle.x, particle.y);
-      }
-      
-      // Regenerate dead particles
-      particle.lifespan -= 0.5;
-      if (particle.lifespan <= 0) {
-        particle.x = p5.random(p5.width);
-        particle.y = p5.random(p5.height);
-        particle.lifespan = 255;
-        particle.vel.mult(0);
-      }
-    });
-    
-    // Draw keyword influence zones (subtle ripples)
-    keywords.forEach((keyword, i) => {
-      const x = p5.noise(i * 100, timeRef.current * 0.5) * p5.width;
-      const y = p5.noise(i * 100 + 1000, timeRef.current * 0.5) * p5.height;
-      const radius = 50 + p5.sin(timeRef.current * 2 + i) * 20;
-      
-      p5.push();
-      p5.noFill();
-      p5.strokeWeight(1);
-      for (let r = radius; r > 0; r -= 10) {
-        const alpha = p5.map(r, 0, radius, 10, 0);
-        p5.stroke(currentColorRef.current[0], currentColorRef.current[1], currentColorRef.current[2], alpha);
-        p5.circle(x, y, r * 2);
-      }
-      p5.pop();
-    });
-  };
+      // Update z offset for animation
+      zoffRef.current += 0.003 + energy * 0.002 + Math.abs(sentiment) * 0.001;
 
-  const windowResized = (p5) => {
-    p5.resizeCanvas(window.innerWidth, window.innerHeight);
-    // Recalculate flow field dimensions
-    const cols = Math.floor(p5.width / 20);
-    const rows = Math.floor(p5.height / 20);
-    flowFieldRef.current = new Array(cols * rows);
-  };
+      // Update target color based on emotion
+      const targetColor = emotionColors[dominantEmotion]?.primary || emotionColors.neutral.primary;
+      
+      // Smooth color transition
+      for (let i = 0; i < 3; i++) {
+        currentColorRef.current[i] += (targetColor[i] - currentColorRef.current[i]) * 0.05;
+      }
+
+      // Update and draw particles
+      particlesRef.current.forEach(particle => {
+        particle.follow(flowFieldRef.current, cols, scale);
+        particle.update(energy, sentiment);
+        particle.draw(ctx, currentColorRef.current, sentiment, energy);
+      });
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    // Handle resize
+    const handleResize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      setupCanvas();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Start animation
+    animate();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      particlesRef.current = [];
+    };
+  }, [PerlinNoise, emotionColors, dominantEmotion]);
 
   return (
-    <div className="visualization-container">
-      <Sketch setup={setup} draw={draw} windowResized={windowResized} />
-      <div className="visualization-info">
-        <div className="sentiment-indicator">
-          <span className="label">Sentiment</span>
-          <div className="bar">
-            <div 
-              className="fill" 
-              style={{
-                width: `${((sentiment + 1) / 2) * 100}%`,
-                background: sentiment > 0 ? 
-                  'linear-gradient(90deg, #4ade80, #22c55e)' : 
-                  'linear-gradient(90deg, #f87171, #ef4444)'
-              }}
-            />
-          </div>
-        </div>
-        <div className="energy-indicator">
-          <span className="label">Energy</span>
-          <div className="bar">
-            <div 
-              className="fill"
-              style={{
-                width: `${energy * 100}%`,
-                background: 'linear-gradient(90deg, #60a5fa, #3b82f6)'
-              }}
-            />
-          </div>
-        </div>
-      </div>
+    <div className="visualization-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+      <canvas 
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%'
+        }}
+      />
     </div>
   );
 };

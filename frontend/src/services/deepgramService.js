@@ -5,8 +5,10 @@ export class DeepgramService {
     this.onStatus = onStatus;
     this.onError = onError;
     this.socket = null;
-    this.mediaRecorder = null;
     this.stream = null;
+    this.audioContext = null;  // ADD THIS
+    this.processor = null;      // ADD THIS
+    this.source = null;         // ADD THIS
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
   }
@@ -15,12 +17,9 @@ export class DeepgramService {
     try {
       this.onStatus('connecting');
       
-      // Get user media
+      // Get user media - SIMPLIFIED CONSTRAINTS
       this.stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          channelCount: 1,
-          sampleRate: 16000,
-          sampleSize: 16,
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
@@ -33,17 +32,18 @@ export class DeepgramService {
         encoding: 'linear16',
         sample_rate: '16000',
         channels: '1',
-        interim_results: 'true',
-        punctuate: 'true',
-        endpointing: 'true',
+        model: 'nova-2',
         language: 'en-US',
-        model: 'nova-2'
+        punctuate: 'true',
+        interim_results: 'true',
+        utterance_end_ms: '1000',
+        vad_events: 'true'
       });
 
       this.socket = new WebSocket(`${url}?${params}`, ['token', this.apiKey]);
 
       this.socket.onopen = () => {
-        console.log('Deepgram WebSocket connected');
+        console.log('✅ Deepgram WebSocket connected');
         this.onStatus('connected');
         this.reconnectAttempts = 0;
         this.startRecording();
@@ -52,7 +52,14 @@ export class DeepgramService {
       this.socket.onmessage = (message) => {
         try {
           const data = JSON.parse(message.data);
-          if (data.channel && this.onTranscript) {
+          console.log('Deepgram message:', data); // ADD THIS FOR DEBUGGING
+          
+          // Check for transcript
+          if (data.channel && 
+              data.channel.alternatives && 
+              data.channel.alternatives[0] && 
+              data.channel.alternatives[0].transcript) {
+            console.log('Transcript:', data.channel.alternatives[0].transcript);
             this.onTranscript(data);
           }
         } catch (error) {
@@ -61,14 +68,24 @@ export class DeepgramService {
       };
 
       this.socket.onerror = (error) => {
-        console.error('Deepgram WebSocket error:', error);
+        console.error('❌ Deepgram WebSocket error:', error);
         this.onError(new Error('WebSocket connection error'));
         this.onStatus('error');
       };
 
       this.socket.onclose = (event) => {
         console.log('Deepgram WebSocket closed:', event.code, event.reason);
+        
+        // Check for auth error
+        if (event.code === 1008) {
+          console.error('❌ Invalid Deepgram API key!');
+          this.onError(new Error('Invalid API key'));
+        }
+        
         this.onStatus('disconnected');
+        
+        // Cleanup audio on close
+        this.cleanupAudio();
         
         // Attempt reconnection if not manually closed
         if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -77,7 +94,7 @@ export class DeepgramService {
       };
 
     } catch (error) {
-      console.error('Error accessing microphone:', error);
+      console.error('❌ Error accessing microphone:', error);
       this.onError(error);
       this.onStatus('error');
       throw error;
@@ -85,36 +102,70 @@ export class DeepgramService {
   }
 
   startRecording() {
-    if (!this.stream) return;
-
-    // Use MediaRecorder for better browser compatibility
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-      ? 'audio/webm;codecs=opus' 
-      : 'audio/webm';
-
-    this.mediaRecorder = new MediaRecorder(this.stream, {
-      mimeType: mimeType,
-    });
-
-    this.mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0 && this.socket && this.socket.readyState === WebSocket.OPEN) {
-        this.socket.send(event.data);
-      }
-    };
-
-    this.mediaRecorder.onerror = (error) => {
-      console.error('MediaRecorder error:', error);
+    if (!this.stream) {
+      console.error('No stream available');
+      return;
+    }
+    
+    try {
+      // Create audio context with specific sample rate
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+        sampleRate: 16000
+      });
+      
+      console.log('Audio context sample rate:', this.audioContext.sampleRate);
+      
+      this.source = this.audioContext.createMediaStreamSource(this.stream);
+      this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+      
+      this.processor.onaudioprocess = (e) => {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+          const inputData = e.inputBuffer.getChannelData(0);
+          
+          // Convert Float32Array to Int16Array for Deepgram
+          const output = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            const s = Math.max(-1, Math.min(1, inputData[i]));
+            output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          
+          this.socket.send(output.buffer);
+        }
+      };
+      
+      // Connect audio nodes
+      this.source.connect(this.processor);
+      this.processor.connect(this.audioContext.destination);
+      
+      console.log('✅ Audio recording started');
+    } catch (error) {
+      console.error('❌ Error starting recording:', error);
       this.onError(error);
-    };
+    }
+  }
 
-    this.mediaRecorder.start(100); // Send data every 100ms
+  cleanupAudio() {
+    // IMPORTANT: Properly cleanup audio nodes
+    if (this.processor) {
+      this.processor.disconnect();
+      this.processor = null;
+    }
+    
+    if (this.source) {
+      this.source.disconnect();
+      this.source = null;
+    }
+    
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
   }
 
   async reconnect() {
     this.reconnectAttempts++;
     console.log(`Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
     
-    // Exponential backoff
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
     
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -127,15 +178,18 @@ export class DeepgramService {
   }
 
   disconnect() {
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-    }
+    console.log('Disconnecting Deepgram service...');
     
+    // Cleanup audio first
+    this.cleanupAudio();
+    
+    // Stop media stream
     if (this.stream) {
       this.stream.getTracks().forEach(track => track.stop());
       this.stream = null;
     }
     
+    // Close WebSocket
     if (this.socket) {
       this.socket.close(1000, 'User disconnected');
       this.socket = null;
