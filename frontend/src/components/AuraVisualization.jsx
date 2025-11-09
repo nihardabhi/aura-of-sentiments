@@ -23,72 +23,79 @@ const AuraVisualization = ({
   const directionShiftRef = useRef(0);
   const emotionIntensityRef = useRef(0);
   
-  // Enhanced emotion color palettes with specific meanings
+    // 🌌 Emotion Aura Palette — Harmonized & Emotionally Tuned
   const emotionColors = {
     joy: {
-      primary: [255, 215, 0],      // Golden yellow
-      secondary: [255, 140, 0],     // Orange
-      tertiary: [255, 255, 100],    // Light yellow
-      glow: [255, 239, 153],        // Soft yellow
-      direction: 'outward-spiral',  // Expansive, celebratory
-      speed: 1.2,
-      particleBehavior: 'dancing'
+      primary: [255, 223, 70],       // Warm golden yellow
+      secondary: [255, 180, 0],      // Deep sunflower orange
+      tertiary: [255, 250, 180],     // Pastel yellow
+      glow: [255, 240, 200],         // Soft daylight glow
+      direction: 'radiant-spiral',   // Expanding, outward
+      speed: 1.3,
+      particleBehavior: 'sparkle-dance' // Gentle, playful shimmer
     },
+
     sadness: {
-      primary: [70, 130, 180],      // Steel blue
-      secondary: [25, 25, 112],     // Midnight blue
-      tertiary: [135, 206, 250],    // Light blue
-      glow: [176, 196, 222],        // Pale blue
-      direction: 'downward-drift',  // Falling, heavy
-      speed: 0.6,
-      particleBehavior: 'falling'
+      primary: [54, 69, 79],         // Slate blue-gray
+      secondary: [25, 25, 112],      // Midnight blue
+      tertiary: [100, 149, 237],     // Cornflower blue
+      glow: [176, 196, 222],         // Soft misty blue
+      direction: 'slow-fall',        // Downward drifting
+      speed: 0.5,
+      particleBehavior: 'tear-float' // Slow, graceful fade
     },
+
     anger: {
-      primary: [255, 69, 0],        // Red-orange
-      secondary: [139, 0, 0],       // Dark red
-      tertiary: [255, 99, 71],      // Tomato
-      glow: [255, 127, 80],         // Coral
-      direction: 'chaotic-burst',   // Explosive, aggressive
-      speed: 1.5,
-      particleBehavior: 'aggressive'
+      primary: [139, 0, 0],          // Dark blood red
+      secondary: [220, 20, 60],      // Crimson red
+      tertiary: [255, 99, 71],       // Hot coral
+      glow: [255, 120, 90],          // Warm fiery edge
+      direction: 'volatile-burst',   // Explosive outward
+      speed: 1.7,
+      particleBehavior: 'eruption'   // Chaotic sparks
     },
+
     fear: {
-      primary: [75, 0, 130],        // Indigo
-      secondary: [48, 25, 52],      // Dark purple
-      tertiary: [147, 112, 219],    // Medium purple
-      glow: [186, 85, 211],         // Orchid
-      direction: 'inward-vortex',   // Contracting, anxious
-      speed: 1.1,
-      particleBehavior: 'jittery'
-    },
-    surprise: {
-      primary: [255, 20, 147],      // Deep pink
-      secondary: [255, 105, 180],   // Hot pink
-      tertiary: [255, 182, 193],    // Light pink
-      glow: [255, 192, 203],        // Pink
-      direction: 'radial-burst',    // Sudden expansion
-      speed: 1.4,
-      particleBehavior: 'bursting'
-    },
-    disgust: {
-      primary: [107, 142, 35],      // Olive green
-      secondary: [85, 107, 47],     // Dark olive
-      tertiary: [154, 205, 50],     // Yellow green
-      glow: [173, 255, 47],         // Green yellow
-      direction: 'repelling',       // Pushing away
-      speed: 0.8,
-      particleBehavior: 'avoiding'
-    },
-    neutral: {
-      primary: [150, 150, 150],     // Gray
-      secondary: [100, 100, 100],   // Dark gray
-      tertiary: [192, 192, 192],    // Silver
-      glow: [211, 211, 211],        // Light gray
-      direction: 'ambient-flow',    // Calm, neutral
+      primary: [48, 25, 52],         // Shadow purple
+      secondary: [75, 0, 130],       // Deep indigo
+      tertiary: [138, 43, 226],      // Blue-violet
+      glow: [186, 85, 211],          // Soft orchid glow
+      direction: 'imploding-vortex', // Inward swirl
       speed: 1.0,
-      particleBehavior: 'flowing'
+      particleBehavior: 'tremor'     // Subtle shaking flicker
+    },
+
+    surprise: {
+      primary: [0, 191, 255],        // Deep sky blue
+      secondary: [255, 182, 193],    // Light pink
+      tertiary: [255, 255, 255],     // White flash
+      glow: [224, 255, 255],         // Pale cyan-white
+      direction: 'shockwave',        // Sudden outward burst
+      speed: 1.5,
+      particleBehavior: 'pulse-burst' // Expanding ripple effect
+    },
+
+    disgust: {
+      primary: [85, 107, 47],        // Dark olive green
+      secondary: [107, 142, 35],     // Dull olive
+      tertiary: [154, 205, 50],      // Muted yellow-green
+      glow: [189, 183, 107],         // Faint earthy glow
+      direction: 'repel-swirls',     // Outward avoidance flow
+      speed: 0.7,
+      particleBehavior: 'slime-flow' // Oozing, irregular motion
+    },
+
+    neutral: {
+      primary: [150, 150, 150],      // Balanced gray
+      secondary: [110, 110, 110],    // Shadow gray
+      tertiary: [200, 200, 200],     // Light gray
+      glow: [220, 220, 220],         // Subtle neutral glow
+      direction: 'steady-flow',      // Calm movement
+      speed: 1.0,
+      particleBehavior: 'smooth-wave' // Gentle, ambient oscillation
     }
   };
+
 
   // Improved Perlin Noise with octaves
   const PerlinNoise = useMemo(() => {
