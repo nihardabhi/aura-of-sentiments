@@ -3,7 +3,6 @@ import React, { useRef, useEffect, useMemo } from 'react';
 const AuraVisualization = ({ 
   sentiment = 0, 
   sentimentType = 'neutral', 
-  energy = 0.5, 
   dominantEmotion = 'neutral', 
   keywords = [] 
 }) => {
@@ -20,10 +19,9 @@ const AuraVisualization = ({
   const targetColorRef = useRef([150, 150, 150]);
   const currentColorRef = useRef([150, 150, 150]);
   const lastEmotionChangeRef = useRef(0);
-  const directionShiftRef = useRef(0);
   const emotionIntensityRef = useRef(0);
   
-    // 🌌 Emotion Aura Palette — Harmonized & Emotionally Tuned
+  // 🌌 Emotion Aura Palette — Harmonized & Emotionally Tuned
   const emotionColors = {
     joy: {
       primary: [255, 223, 70],       // Warm golden yellow
@@ -36,18 +34,19 @@ const AuraVisualization = ({
     },
 
     sadness: {
-      primary: [54, 69, 79],         // Slate blue-gray
+      primary: [38, 70, 130],        // Deep twilight blue (distinct from gray)
       secondary: [25, 25, 112],      // Midnight blue
-      tertiary: [100, 149, 237],     // Cornflower blue
-      glow: [176, 196, 222],         // Soft misty blue
-      direction: 'slow-fall',        // Downward drifting
+      tertiary: [123, 157, 189],     // Muted sky reflection blue
+      glow: [170, 200, 230],         // Gentle misty glow
+      direction: 'slow-fall',        // Downward drift, rain-like
       speed: 0.5,
-      particleBehavior: 'tear-float' // Slow, graceful fade
+      particleBehavior: 'tear-float' // Softly falling, fading
     },
 
+
     anger: {
-      primary: [139, 0, 0],          // Dark blood red
-      secondary: [220, 20, 60],      // Crimson red
+      primary: [139, 0, 0],          // Crimson red
+      secondary: [220, 20, 60],      // Dark blood red
       tertiary: [255, 99, 71],       // Hot coral
       glow: [255, 120, 90],          // Warm fiery edge
       direction: 'volatile-burst',   // Explosive outward
@@ -97,7 +96,7 @@ const AuraVisualization = ({
   };
 
 
-  // Improved Perlin Noise with octaves
+  // Perlin Noise implementation
   const PerlinNoise = useMemo(() => {
     class PerlinNoiseGenerator {
       constructor() {
@@ -175,17 +174,14 @@ const AuraVisualization = ({
     return new PerlinNoiseGenerator();
   }, []);
 
-  // Enhanced Particle class with emotion-aware behaviors
+  // Particle class
   class Particle {
     constructor(canvas) {
       this.canvas = canvas;
       this.reset();
       this.history = [];
       this.maxHistory = 25;
-      this.colorTransition = 0;
-      this.targetColor = [150, 150, 150];
       this.currentColor = [150, 150, 150];
-      this.emotionInfluence = 0;
     }
 
     reset() {
@@ -203,7 +199,7 @@ const AuraVisualization = ({
       this.size = Math.random() * 2.5 + 0.5;
       this.history = [];
       this.personalPhase = Math.random() * Math.PI * 2;
-      this.emotionResponse = Math.random() * 0.5 + 0.5; // How strongly this particle responds to emotions
+      this.emotionResponse = Math.random() * 0.5 + 0.5;
     }
 
     follow(flowField, cols, scale, emotionDirection, emotionIntensity) {
@@ -214,7 +210,6 @@ const AuraVisualization = ({
       if (flowField[index]) {
         let force = flowField[index];
         
-        // Apply emotion-specific directional modifications
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
         const dx = this.x - centerX;
@@ -225,7 +220,6 @@ const AuraVisualization = ({
         // Emotion-specific movement patterns
         switch(emotionDirection) {
           case 'outward-spiral':
-            // Joy - particles spiral outward energetically
             const spiralForce = emotionIntensity * this.emotionResponse * 0.3;
             this.applyForce(
               Math.cos(angle + this.personalPhase) * spiralForce,
@@ -234,13 +228,11 @@ const AuraVisualization = ({
             break;
             
           case 'downward-drift':
-            // Sadness - particles drift downward like tears
             this.applyForce(0, emotionIntensity * 0.2);
-            this.vx *= 0.95; // Slow horizontal movement
+            this.vx *= 0.95;
             break;
             
           case 'chaotic-burst':
-            // Anger - erratic, aggressive movement
             const chaos = emotionIntensity * this.emotionResponse;
             this.applyForce(
               (Math.random() - 0.5) * chaos,
@@ -249,13 +241,11 @@ const AuraVisualization = ({
             break;
             
           case 'inward-vortex':
-            // Fear - particles pulled inward anxiously
             const pullStrength = emotionIntensity * 0.2;
             this.applyForce(
               -dx / distFromCenter * pullStrength,
               -dy / distFromCenter * pullStrength
             );
-            // Add jitter
             this.applyForce(
               (Math.random() - 0.5) * 0.1,
               (Math.random() - 0.5) * 0.1
@@ -263,7 +253,6 @@ const AuraVisualization = ({
             break;
             
           case 'radial-burst':
-            // Surprise - sudden radial explosion
             const burstForce = emotionIntensity * 0.4;
             this.applyForce(
               dx / distFromCenter * burstForce,
@@ -272,7 +261,6 @@ const AuraVisualization = ({
             break;
             
           case 'repelling':
-            // Disgust - particles avoid center
             if (distFromCenter < 200) {
               this.applyForce(
                 dx / distFromCenter * emotionIntensity * 0.3,
@@ -282,11 +270,9 @@ const AuraVisualization = ({
             break;
             
           default:
-            // Neutral - follow flow field normally
             break;
         }
         
-        // Apply base flow field force
         this.applyForce(force.x * (1 - emotionIntensity * 0.5), force.y * (1 - emotionIntensity * 0.5));
       }
     }
@@ -297,35 +283,31 @@ const AuraVisualization = ({
     }
 
     updateColor(targetColor, transitionSpeed = 0.05) {
-      // Smooth color transition
       for (let i = 0; i < 3; i++) {
         this.currentColor[i] += (targetColor[i] - this.currentColor[i]) * transitionSpeed;
       }
     }
 
-    update(energy, sentiment, emotionSpeed) {
+    update(sentiment, emotionSpeed) {
       this.vx += this.ax;
       this.vy += this.ay;
       
-      // Dynamic speed based on emotion and energy
-      this.maxSpeed = emotionSpeed * (1 + energy * 2);
+      // Speed based on emotion and sentiment intensity
+      this.maxSpeed = emotionSpeed * (1 + Math.abs(sentiment));
       
-      // Apply speed limit
       const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
       if (currentSpeed > this.maxSpeed) {
         this.vx = (this.vx / currentSpeed) * this.maxSpeed;
         this.vy = (this.vy / currentSpeed) * this.maxSpeed;
       }
       
-      // Apply friction
       this.vx *= 0.98;
       this.vy *= 0.98;
       
-      // Store history for trails
       this.history.push({ 
         x: this.x, 
         y: this.y,
-        color: [...this.currentColor] // Store color at this point
+        color: [...this.currentColor]
       });
       if (this.history.length > this.maxHistory) {
         this.history.shift();
@@ -340,8 +322,7 @@ const AuraVisualization = ({
       this.ax = 0;
       this.ay = 0;
       
-      // Life decay influenced by energy
-      this.life -= this.lifeDecay * (1 + energy * 0.3);
+      this.life -= this.lifeDecay;
       
       // Edge wrapping
       if (this.x < 0) {
@@ -369,11 +350,11 @@ const AuraVisualization = ({
       }
     }
 
-    draw(ctx, energy, frameCount, globalAlpha = 1) {
+    draw(ctx, sentiment, frameCount, globalAlpha = 1) {
       const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
       const normalizedSpeed = speed / this.maxSpeed;
       
-      // Draw particle trail with color history
+      // Draw particle trail
       if (this.history.length > 1) {
         for (let i = 0; i < this.history.length - 1; i++) {
           const point = this.history[i];
@@ -393,18 +374,16 @@ const AuraVisualization = ({
         }
       }
       
-      // Draw main particle with current color
+      // Draw main particle
       const r = Math.floor(this.currentColor[0]);
       const g = Math.floor(this.currentColor[1]);
       const b = Math.floor(this.currentColor[2]);
       
-      // Calculate alpha
       const baseAlpha = 0.2;
       const speedAlpha = normalizedSpeed * 0.4;
       const lifeAlpha = this.life * 0.5;
       const alpha = Math.min(1, (baseAlpha + speedAlpha + lifeAlpha) * globalAlpha);
       
-      // Main particle
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
@@ -415,20 +394,10 @@ const AuraVisualization = ({
       ctx.lineTo(this.x, this.y);
       ctx.stroke();
       
-      // Glow effect
-      if (energy > 0.6 || normalizedSpeed > 0.7) {
+      // Glow effect for high sentiment
+      if (Math.abs(sentiment) > 0.6 || normalizedSpeed > 0.7) {
         ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.3})`;
         ctx.lineWidth = this.size * 5;
-        ctx.beginPath();
-        ctx.moveTo(this.prevX, this.prevY);
-        ctx.lineTo(this.x, this.y);
-        ctx.stroke();
-      }
-      
-      // Bright core for fast particles
-      if (normalizedSpeed > 0.8) {
-        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
-        ctx.lineWidth = this.size * 0.3;
         ctx.beginPath();
         ctx.moveTo(this.prevX, this.prevY);
         ctx.lineTo(this.x, this.y);
@@ -456,7 +425,6 @@ const AuraVisualization = ({
     
     setupCanvas();
 
-    // Create particle system
     const particleDensity = 0.0012;
     const particleCount = Math.min(2500, Math.max(800, width * height * particleDensity));
     
@@ -464,7 +432,6 @@ const AuraVisualization = ({
       particlesRef.current.push(new Particle(canvas));
     }
 
-    // Flow field parameters
     const scale = 20;
     let cols = Math.floor(width / scale) + 1;
     let rows = Math.floor(height / scale) + 1;
@@ -478,15 +445,14 @@ const AuraVisualization = ({
         currentEmotionRef.current = dominantEmotion;
         emotionTransitionRef.current = 0;
         
-        // Set target color for new emotion
         const emotionPalette = emotionColors[dominantEmotion] || emotionColors.neutral;
         targetColorRef.current = [...emotionPalette.primary];
       }
       
       // Smooth emotion transition
       if (emotionTransitionRef.current < 1) {
-        emotionTransitionRef.current += 0.02; // 50 frames for full transition
-        emotionIntensityRef.current = Math.sin(emotionTransitionRef.current * Math.PI / 2); // Ease-in curve
+        emotionTransitionRef.current += 0.02;
+        emotionIntensityRef.current = Math.sin(emotionTransitionRef.current * Math.PI / 2);
       }
       
       // Update global color smoothly
@@ -494,8 +460,8 @@ const AuraVisualization = ({
         currentColorRef.current[i] += (targetColorRef.current[i] - currentColorRef.current[i]) * 0.03;
       }
       
-      // Dynamic fade for trails
-      const fadeAlpha = 0.015 + (1 - energy) * 0.02;
+      // Fade effect
+      const fadeAlpha = 0.02;
       ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
       ctx.fillRect(0, 0, width, height);
 
@@ -511,7 +477,6 @@ const AuraVisualization = ({
         for (let x = 0; x < cols; x++) {
           const index = x + y * cols;
           
-          // Multi-octave noise
           const noiseValue = PerlinNoise.octaveNoise(
             x * inc + zoffRef.current * 0.3,
             y * inc + zoffRef.current * 0.3,
@@ -519,15 +484,11 @@ const AuraVisualization = ({
             0.5
           );
           
-          // Base angle from noise
           let angle = noiseValue * Math.PI * 4;
-          
-          // Add time-based undulation
           angle += Math.sin(zoffRef.current * 2 + x * 0.05) * 0.2;
           angle += Math.cos(zoffRef.current * 2 + y * 0.05) * 0.2;
           
-          // Calculate force magnitude
-          const magnitude = 0.3 + energy * 0.4;
+          const magnitude = 0.3 + Math.abs(sentiment) * 0.3;
           
           flowFieldRef.current[index] = {
             x: Math.cos(angle) * magnitude,
@@ -536,27 +497,22 @@ const AuraVisualization = ({
         }
       }
       
-      zoffRef.current += 0.003 + energy * 0.001;
+      zoffRef.current += 0.003 + Math.abs(sentiment) * 0.001;
 
-      // Get current emotion properties
       const emotionPalette = emotionColors[dominantEmotion] || emotionColors.neutral;
       const emotionDirection = emotionPalette.direction;
       const emotionSpeed = emotionPalette.speed;
       
       // Update and draw particles
       particlesRef.current.forEach(particle => {
-        // Update particle color smoothly
         particle.updateColor(currentColorRef.current, 0.02);
-        
-        // Apply emotion-specific movement
         particle.follow(flowFieldRef.current, cols, scale, emotionDirection, emotionIntensityRef.current);
-        particle.update(energy, sentiment, emotionSpeed);
-        particle.draw(ctx, energy, frameCountRef.current, 1);
+        particle.update(sentiment, emotionSpeed);
+        particle.draw(ctx, sentiment, frameCountRef.current, 1);
       });
       
-      // Add emotion transition effects
+      // Emotion transition effect
       if (emotionTransitionRef.current < 1) {
-        // Create burst effect during transition
         const burstIntensity = emotionIntensityRef.current;
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
@@ -573,7 +529,7 @@ const AuraVisualization = ({
         ctx.restore();
       }
       
-      // Keyword influence visualization
+      // Keyword visualization
       if (keywords && keywords.length > 0) {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
@@ -617,7 +573,7 @@ const AuraVisualization = ({
       }
       particlesRef.current = [];
     };
-  }, [PerlinNoise, emotionColors, dominantEmotion, keywords, sentiment, energy]);
+  }, [PerlinNoise, emotionColors, dominantEmotion, keywords, sentiment]);
 
   return (
     <div className="visualization-container" style={{ 

@@ -6,7 +6,6 @@
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-  --energy-gradient: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   --glass-bg: rgba(255, 255, 255, 0.02);
   --glass-border: rgba(255, 255, 255, 0.08);
   --text-primary: rgba(255, 255, 255, 0.95);
@@ -103,6 +102,11 @@ body {
   }
 }
 
+.title-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .app-title {
   font-family: 'Orbitron', monospace;
   position: relative;
@@ -149,12 +153,15 @@ body {
   width: 100%;
 }
 
-/* Metrics Row */
-.metrics-row {
+/* Metrics Row - Now with 2 cards */
+.metrics-row-two {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   animation: fadeInUp 0.8s ease-out 0.2s both;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 @keyframes fadeInUp {
@@ -204,6 +211,28 @@ body {
   box-shadow: 
     0 20px 40px rgba(102, 126, 234, 0.2),
     0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Special backgrounds for sentiment types */
+.metric-card.sentiment-card.positive {
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(16, 185, 129, 0.15) 50%,
+    rgba(52, 211, 153, 0.1) 100%);
+}
+
+.metric-card.sentiment-card.negative {
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(239, 68, 68, 0.15) 50%,
+    rgba(248, 113, 113, 0.1) 100%);
+}
+
+.metric-card.emotion-card {
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(147, 51, 234, 0.15) 50%,
+    rgba(196, 181, 253, 0.1) 100%);
 }
 
 .metric-header {
@@ -706,15 +735,6 @@ body {
   font-size: 0.8rem;
 }
 
-/* Remove complex effects */
-.title-wrapper .title-glow {
-  display: none;
-}
-
-.record-ripple {
-  display: none;
-}
-
 /* Responsive Design */
 @media (max-width: 1400px) {
   .content-grid {
@@ -735,7 +755,7 @@ body {
     font-size: 1.5rem;
   }
   
-  .metrics-row {
+  .metrics-row-two {
     grid-template-columns: 1fr;
   }
   
@@ -772,6 +792,11 @@ body {
   
   .button-icon {
     font-size: 1.5rem;
+  }
+  
+  .metrics-row-two {
+    grid-template-columns: 1fr;
+    gap: 15px;
   }
 }
 
