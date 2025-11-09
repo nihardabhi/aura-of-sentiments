@@ -465,10 +465,10 @@ function App() {
                         {isRecording ? 'Recording' : 'Ready'}
                       </span>
                     </div>
-                    <div className="stat-item">
+                    {/* <div className="stat-item">
                       <span className="stat-label">Words Captured</span>
                       <span className="stat-value">{transcript.length}</span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>

@@ -68,7 +68,7 @@ body {
   opacity: 0.7;
 }
 
-/* Interface Wrapper with Animation */
+/* Interface Wrapper */
 .interface-wrapper {
   position: relative;
   z-index: 10;
@@ -87,44 +87,20 @@ body {
   transform: translateY(0);
 }
 
-/* App Header */
+/* Simplified App Header */
 .app-header {
   text-align: center;
-  margin-bottom: 30px;
-  animation: slideDown 0.8s ease-out;
+  margin-bottom: 40px;
+  animation: fadeIn 1s ease-out;
 }
 
-@keyframes slideDown {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-30px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
-}
-
-.title-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.title-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 300px;
-  height: 100px;
-  background: radial-gradient(ellipse, rgba(102, 126, 234, 0.4) 0%, transparent 70%);
-  filter: blur(40px);
-  transform: translate(-50%, -50%);
-  animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
 }
 
 .app-title {
@@ -133,45 +109,33 @@ body {
   z-index: 2;
 }
 
+/* Simplified Bold Title */
 .title-main {
   display: block;
-  font-size: 4rem;
+  font-size: 5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 0.1em;
-  animation: gradientShift 4s ease infinite;
-  text-shadow: 0 0 40px rgba(102, 126, 234, 0.5);
+  color: #ffffff;
+  letter-spacing: 0.15em;
+  margin-bottom: -15px;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
 }
 
 .title-sub {
   display: block;
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  margin-top: -10px;
-  background: linear-gradient(90deg, #f093fb, #f5576c);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 0.3em;
-  animation: gradientShift 4s ease infinite reverse;
-}
-
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  color: #ffffff;
+  letter-spacing: 0.4em;
+  opacity: 0.9;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
 }
 
 .title-tagline {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.05em;
-  font-weight: 300;
+  margin-top: 15px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.1em;
+  font-weight: 400;
 }
 
 /* Dashboard Container */
@@ -204,17 +168,22 @@ body {
   }
 }
 
-/* Metric Cards with 3D Effect */
+/* Metric Cards */
 .metric-card {
-  background: linear-gradient(135deg, var(--glass-bg), rgba(255, 255, 255, 0.01));
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  padding: 20px;
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(102, 126, 234, 0.12) 50%,
+    rgba(118, 75, 162, 0.08) 100%);
+  backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 25px;
   position: relative;
   overflow: hidden;
-  transform-style: preserve-3d;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 15px 40px rgba(0, 0, 0, 0.4),
+    0 0 60px rgba(102, 126, 234, 0.05);
 }
 
 .metric-card::before {
@@ -224,17 +193,14 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    transparent);
 }
 
 .metric-card:hover {
-  transform: translateY(-5px) rotateX(5deg);
+  transform: translateY(-5px);
   box-shadow: 
     0 20px 40px rgba(102, 126, 234, 0.2),
     0 10px 20px rgba(0, 0, 0, 0.3);
@@ -257,7 +223,6 @@ body {
 
 .metric-icon {
   font-size: 1.5rem;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
 }
 
 .metric-value-wrapper {
@@ -268,10 +233,7 @@ body {
   font-size: 2.5rem;
   font-weight: 700;
   font-family: 'Orbitron', monospace;
-  background: linear-gradient(135deg, #fff, rgba(255, 255, 255, 0.8));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
 }
 
 .metric-subtext {
@@ -293,33 +255,9 @@ body {
   height: 100%;
   border-radius: 10px;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
 }
 
-.metric-bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: slideGlow 2s infinite;
-}
-
-@keyframes slideGlow {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* Energy Fill Special Animation */
-.energy-fill {
-  background: var(--energy-gradient);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-}
-
-/* Emotion Card Specifics */
+/* Emotion Display */
 .emotion-display {
   text-align: center;
   padding: 20px 0;
@@ -354,32 +292,23 @@ body {
 
 /* Glass Panels */
 .panel {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.88) 0%,
+    rgba(102, 126, 234, 0.12) 25%,
+    rgba(118, 75, 162, 0.08) 50%,
+    rgba(240, 147, 251, 0.06) 75%,
+    rgba(0, 0, 0, 0.85) 100%);
+  backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 28px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
   transition: all 0.3s ease;
-}
-
-.panel::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.panel:hover::before {
-  opacity: 1;
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.4),
+    0 0 80px rgba(102, 126, 234, 0.08);
 }
 
 .panel:hover {
@@ -404,7 +333,6 @@ body {
 
 .panel-icon {
   font-size: 1.5rem;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
 }
 
 .panel-title h3 {
@@ -469,8 +397,6 @@ body {
 .transcript-scroll::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
   border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
 }
 
 .transcript-entry {
@@ -481,7 +407,6 @@ body {
   border-left: 3px solid transparent;
   border-image: linear-gradient(180deg, #667eea, #764ba2) 1;
   animation: slideInLeft 0.3s ease;
-  transition: all 0.2s ease;
 }
 
 @keyframes slideInLeft {
@@ -517,7 +442,7 @@ body {
   font-size: 0.95rem;
 }
 
-/* Keywords 3D Cloud */
+/* Keywords Cloud */
 .keywords-container {
   flex: 1;
   display: flex;
@@ -565,25 +490,6 @@ body {
   font-size: calc(0.8rem * var(--size));
   font-weight: 500;
   letter-spacing: 0.02em;
-  position: relative;
-  overflow: hidden;
-}
-
-.keyword-text::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.4) 0%, transparent 70%);
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.keyword-3d:hover .keyword-text::before {
-  opacity: 1;
 }
 
 .keyword-glow {
@@ -622,6 +528,7 @@ body {
   gap: 30px;
 }
 
+/* Simplified Recording Button */
 .record-button-container {
   position: relative;
 }
@@ -631,135 +538,82 @@ body {
   display: inline-block;
 }
 
-.record-ripple {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120px;
-  height: 120px;
-  border: 2px solid rgba(102, 126, 234, 0.4);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.record-button-wrapper.recording .record-ripple {
-  animation: ripple 2s infinite;
-}
-
-.record-ripple.delay-1 {
-  animation-delay: 0.5s;
-}
-
-.record-ripple.delay-2 {
-  animation-delay: 1s;
-}
-
-@keyframes ripple {
-  0% {
-    width: 120px;
-    height: 120px;
-    opacity: 1;
-  }
-  100% {
-    width: 200px;
-    height: 200px;
-    opacity: 0;
-  }
-}
-
+/* Simple Bold Record Button */
 .record-button {
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #ffffff;
   border: none;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 
-    0 10px 30px rgba(102, 126, 234, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: scale(1);
-}
-
-.record-button::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
-  transform: rotate(45deg);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.record-button:hover::before {
-  opacity: 1;
 }
 
 .record-button:hover {
-  transform: scale(1.1);
-  box-shadow: 
-    0 15px 40px rgba(102, 126, 234, 0.5),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
 
 .record-button:active {
-  transform: scale(1.05);
+  transform: scale(0.98);
 }
 
+/* Active Recording State */
 .record-button.active {
-  background: linear-gradient(135deg, #f093fb, #f5576c);
-  animation: pulseButton 2s infinite;
+  background: #ff4444;
+  animation: pulse 2s infinite;
 }
 
-@keyframes pulseButton {
+@keyframes pulse {
   0%, 100% {
-    box-shadow: 
-      0 10px 30px rgba(240, 147, 251, 0.4),
-      inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(255, 68, 68, 0.4);
   }
   50% {
-    box-shadow: 
-      0 15px 40px rgba(240, 147, 251, 0.6),
-      inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 15px 40px rgba(255, 68, 68, 0.6);
   }
 }
 
+/* Button Content */
 .button-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: white;
+  gap: 10px;
 }
 
 .button-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  font-size: 2.5rem;
 }
 
 .button-text {
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   font-family: 'Orbitron', monospace;
 }
 
-/* Recording Indicator */
+/* Color adjustments for button states */
+.record-button:not(.active) .button-inner {
+  color: #000000;
+}
+
+.record-button.active .button-inner {
+  color: #ffffff;
+}
+
+/* Simple Recording Indicator */
 .recording-indicator {
   text-align: center;
+  margin-top: 20px;
 }
 
 .sound-wave {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   justify-content: center;
   align-items: center;
   height: 30px;
@@ -767,10 +621,10 @@ body {
 }
 
 .sound-wave span {
-  width: 3px;
+  width: 4px;
   height: 100%;
-  background: linear-gradient(180deg, #f093fb, #f5576c);
-  border-radius: 3px;
+  background: #ff4444;
+  border-radius: 4px;
   animation: wave 1s ease-in-out infinite;
 }
 
@@ -785,14 +639,9 @@ body {
 }
 
 .recording-indicator p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  animation: fadeInOut 2s ease-in-out infinite;
-}
-
-@keyframes fadeInOut {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 /* Control Stats */
@@ -855,6 +704,15 @@ body {
 .empty-hint {
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+/* Remove complex effects */
+.title-wrapper .title-glow {
+  display: none;
+}
+
+.record-ripple {
+  display: none;
 }
 
 /* Responsive Design */
