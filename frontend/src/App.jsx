@@ -9,12 +9,11 @@ import { processText } from './services/apiService';
 import './styles/App.css';
 
 function App() {
-  // State management
+  // State management (energy removed)
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState([]);
   const [sentiment, setSentiment] = useState(0);
   const [sentimentType, setSentimentType] = useState('neutral');
-  const [energy, setEnergy] = useState(0.5);
   const [keywords, setKeywords] = useState([]);
   const [dominantEmotion, setDominantEmotion] = useState('neutral');
   const [showInterface, setShowInterface] = useState(false);
@@ -81,25 +80,21 @@ function App() {
     processingRef.current = false;
   }, []);
   
-  // Animate state updates
+  // Animate state updates (energy removed)
   const animateStateUpdate = useCallback((response) => {
     requestAnimationFrame(() => {
       const steps = 30;
       const currentSentiment = sentiment;
-      const currentEnergy = energy;
       const sentimentDiff = response.sentiment - currentSentiment;
-      const energyDiff = response.energy - currentEnergy;
       
       let step = 0;
       const animateStep = () => {
         if (step < steps) {
           setSentiment(prev => prev + sentimentDiff / steps);
-          setEnergy(prev => prev + energyDiff / steps);
           step++;
           requestAnimationFrame(animateStep);
         } else {
           setSentiment(response.sentiment);
-          setEnergy(response.energy);
           setSentimentType(response.sentiment_type);
           setDominantEmotion(response.dominant_emotion);
         }
@@ -118,9 +113,9 @@ function App() {
         }, index * 150);
       });
     });
-  }, [sentiment, energy]);
+  }, [sentiment]);
   
-  // Generate fallback sentiment
+  // Generate fallback sentiment (energy removed)
   const generateFallbackSentiment = useCallback((text) => {
     const positiveWords = ['good', 'great', 'happy', 'love', 'excellent', 'wonderful', 'amazing', 'fantastic', 'beautiful', 'perfect'];
     const negativeWords = ['bad', 'sad', 'angry', 'hate', 'terrible', 'awful', 'horrible', 'disgusting', 'frustrating', 'disappointing'];
@@ -147,7 +142,6 @@ function App() {
     return {
       sentiment: Math.max(-1, Math.min(1, sentimentScore)),
       sentiment_type: sentimentScore > 0 ? 'positive' : sentimentScore < 0 ? 'negative' : 'neutral',
-      energy: Math.min(1, Math.abs(sentimentScore) + 0.5),
       keywords: foundKeywords.slice(0, 5),
       dominant_emotion: sentimentScore > 0.5 ? 'joy' : 
                        sentimentScore > 0 ? 'surprise' :
@@ -210,7 +204,6 @@ function App() {
         setTranscript([]);
         setKeywords([]);
         setSentiment(0);
-        setEnergy(0.5);
         setSentimentType('neutral');
         setDominantEmotion('neutral');
         currentUtteranceRef.current = '';
@@ -248,7 +241,6 @@ function App() {
         <AuraVisualization 
           sentiment={sentiment}
           sentimentType={sentimentType}
-          energy={energy}
           dominantEmotion={dominantEmotion}
           keywords={keywords}
         />
@@ -262,7 +254,6 @@ function App() {
           {/* Header with Title */}
           <header className="app-header">
             <div className="title-wrapper">
-              <div className="title-glow"></div>
               <h1 className="app-title">
                 <span className="title-main">SENTIMENT</span>
                 <span className="title-sub">AURA</span>
@@ -274,8 +265,8 @@ function App() {
           {/* Main Dashboard */}
           <div className="dashboard">
             
-            {/* Metrics Cards */}
-            <div className="metrics-row">
+            {/* Metrics Cards - Now only 2 cards */}
+            <div className="metrics-row-two">
               <div className={`metric-card sentiment-card ${sentimentType}`}>
                 <div className="metric-header">
                   <span className="metric-label">Sentiment Analysis</span>
@@ -297,27 +288,6 @@ function App() {
                         : sentiment < 0
                         ? 'linear-gradient(90deg, #ef4444, #f87171)'
                         : 'linear-gradient(90deg, #6b7280, #9ca3af)'
-                    }}
-                  />
-                </div>
-              </div>
-              
-              <div className="metric-card energy-card">
-                <div className="metric-header">
-                  <span className="metric-label">Energy Level</span>
-                  <span className="metric-icon">⚡</span>
-                </div>
-                <div className="metric-value-wrapper">
-                  <div className="metric-value">{(energy * 100).toFixed(0)}%</div>
-                  <div className="metric-subtext">
-                    {energy > 0.7 ? 'HIGH' : energy > 0.4 ? 'MEDIUM' : 'LOW'}
-                  </div>
-                </div>
-                <div className="metric-bar">
-                  <div 
-                    className="metric-bar-fill energy-fill"
-                    style={{
-                      width: `${energy * 100}%`,
                     }}
                   />
                 </div>
@@ -424,9 +394,6 @@ function App() {
                 <div className="panel-body control-body">
                   <div className="record-button-container">
                     <div className={`record-button-wrapper ${isRecording ? 'recording' : ''}`}>
-                      <div className="record-ripple"></div>
-                      <div className="record-ripple delay-1"></div>
-                      <div className="record-ripple delay-2"></div>
                       <button
                         className={`record-button ${isRecording ? 'active' : ''}`}
                         onClick={handleStartStop}
@@ -465,10 +432,6 @@ function App() {
                         {isRecording ? 'Recording' : 'Ready'}
                       </span>
                     </div>
-                    {/* <div className="stat-item">
-                      <span className="stat-label">Words Captured</span>
-                      <span className="stat-value">{transcript.length}</span>
-                    </div> */}
                   </div>
                 </div>
               </div>

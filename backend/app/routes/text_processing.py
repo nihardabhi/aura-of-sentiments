@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-
 class TextRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000)
 
@@ -20,17 +19,14 @@ class TextRequest(BaseModel):
             raise ValueError("Text cannot be empty or just whitespace")
         return v.strip()
 
-#create a response model which include all necessary field to base model
 class SentimentResponse(BaseModel):
     sentiment: float = Field(..., ge=-1, le=1)
     sentiment_type: str = Field(..., pattern="^(positive|negative|neutral)$")
-    energy: float = Field(..., ge=0, le=1)
     keywords: List[str] = Field(..., max_items=5)
     dominant_emotion: str = Field(..., pattern="^(joy|sadness|anger|fear|surprise|disgust|neutral)$")
 
 @router.post("/process_text", response_model=SentimentResponse)
 async def process_text(request: TextRequest, req: Request):
-
     try:
         start_time = time.time()
         logger.info(f"Processing text: {request.text[:50]}...")
@@ -63,7 +59,8 @@ async def batch_process(texts: List[str], req: Request):
             if text.strip():
                 result = await llm_service.analyze_text(text.strip())
                 results.append({
-                    "text": text[:50] + "..." if len(text) > 50 else text,"analysis":result 
+                    "text": text[:50] + "..." if len(text) > 50 else text,
+                    "analysis": result 
                 })
             
         return{
@@ -75,5 +72,3 @@ async def batch_process(texts: List[str], req: Request):
     except Exception as e:
         logger.error(f"Batch processing error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
