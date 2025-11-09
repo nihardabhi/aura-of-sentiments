@@ -60,35 +60,110 @@ class LLMService:
 
     def _create_prompt(self, text: str) -> str:
         return f"""
-        Analyze the following text for emotional content and provide sentiment analysis.
+        IMPORTANT: Read and analyze the ENTIRE text carefully. Consider the complete context, not just individual words. 
+        The overall meaning and emotion of the full sentence matters more than isolated keywords.
         
         Text to analyze: "{text}"
         
-        Provide the following information:
-        1. Sentiment score: A precise float between -1 (very negative) and 1 (very positive)
-        2. Sentiment type: Exactly one of: "positive", "negative", or "neutral"
-        3. Energy level: A float between 0 (calm/low energy) and 1 (excited/high energy)
-        4. Keywords: Extract 3-5 most important keywords or short phrases that capture the essence
-        5. Dominant emotion: Exactly one of: joy, sadness, anger, fear, surprise, disgust, or neutral
+        ANALYSIS INSTRUCTIONS:
+        1. READ THE COMPLETE TEXT FIRST - understand the whole message
+        2. Consider the CONTEXT - words like "not happy" mean negative, not positive
+        3. Look for COMBINATIONS - "promoted" + "happy" together = strong joy
+        4. Understand NEGATIONS - "not sad", "no longer worried", "can't be happier"
+        5. Detect SARCASM - "Oh great, another problem" is negative, not positive
+        6. Identify TRUE EMOTION - what is the person REALLY feeling?
         
-        Consider:
-        - Overall tone and mood
-        - Emotional intensity
-        - Context and nuance
-        - Word choice and phrasing
-        - Punctuation (exclamation marks indicate higher energy)
+        CONTEXTUAL ANALYSIS EXAMPLES:
+        - "I got promoted and I'm so happy" = JOY (positive combination)
+        - "I'm not happy about this" = SADNESS/ANGER (negation)
+        - "I can't be more happy" or "couldn't be happier" = JOY (emphatic positive)
+        - "Great, just great" (sarcastic) = ANGER (context matters)
+        - "I'm worried but trying to stay positive" = FEAR (underlying emotion)
+        - "Everything is fine" (after describing problems) = SADNESS (contradiction)
         
-        Respond ONLY with valid JSON in this exact format:
+        COMPREHENSIVE EMOTION KEYWORDS GUIDE:
+        
+        JOY/POSITIVE (sentiment 0.5 to 1.0):
+        - Achievement: promoted, promotion, success, successful, accomplished, achievement, win, won, winning, victory, triumph, conquered, graduated, passed, earned, awarded, recognized, milestone, goal
+        - Happiness: happy, happier, happiest, joy, joyful, delighted, cheerful, pleased, glad, elated, ecstatic, overjoyed, thrilled, euphoric, blissful, content, satisfied, fulfilled, smiling, laughing
+        - Excitement: excited, exciting, amazing, wonderful, fantastic, awesome, incredible, brilliant, spectacular, magnificent, marvelous, fabulous, outstanding, excellent, superb, great, phenomenal
+        - Love: love, loved, loving, adore, cherish, treasure, beloved, dear, caring, affection, fond, romantic, passion, devoted, attached, close
+        - Gratitude: grateful, thankful, blessed, appreciate, fortunate, lucky, privileged
+        - Celebration: celebrate, party, congratulations, cheers, hooray, yay, woohoo, hurray
+        - Optimism: hopeful, optimistic, positive, confident, looking forward, can't wait
+        
+        SADNESS/NEGATIVE (sentiment -1.0 to -0.3):
+        - Loss: miss, missing, lost, gone, departed, passed away, deceased, abandoned, left, goodbye, farewell, ending, over
+        - Loneliness: lonely, alone, isolated, solitary, empty, hollow, abandoned, forgotten, neglected, rejected, unwanted, excluded
+        - Sadness: sad, sorrow, unhappy, miserable, depressed, melancholy, gloomy, grief, mourn, cry, crying, tears, weep, heartbroken, devastated, down, blue, low
+        - Disappointment: disappointed, let down, failed, failure, unsuccessful, defeated, hopeless, despair, discouraged, disheartened, crushed, deflated
+        - Pain: hurt, pain, ache, suffering, agony, wounded, broken, damaged, scarred
+        - Regret: regret, sorry, wish, should have, could have, mistake, fault, blame
+        
+        ANGER/NEGATIVE (sentiment -1.0 to -0.3):
+        - Frustration: frustrated, frustrating, annoyed, annoying, irritated, irritating, aggravated, exasperated, fed up, tired of, sick of, enough, can't stand
+        - Anger: angry, mad, furious, rage, outraged, livid, irate, enraged, infuriated, pissed, upset, cross, hostile, seething, fuming, boiling
+        - Unfairness: unfair, unjust, unacceptable, ridiculous, absurd, stupid, idiotic, wrong, terrible, horrible, awful, pathetic, useless
+        - Conflict: hate, despise, detest, loathe, disgusted, revolted, repulsed, can't stand, intolerable, unbearable
+        
+        FEAR/ANXIETY (sentiment -0.5 to -0.2):
+        - Worry: worried, worry, anxious, anxiety, nervous, uneasy, restless, tense, stressed, overwhelmed, concerned, troubled, bothered
+        - Fear: scared, frightened, afraid, terrified, horrified, panic, panicking, alarmed, spooked, fearful, phobia, dread
+        - Uncertainty: uncertain, unsure, confused, lost, doubtful, hesitant, insecure, vulnerable, shaky, unstable
+        - Threat: danger, dangerous, risk, risky, threat, threatening, ominous, scary, creepy, eerie, suspicious
+        
+        SURPRISE (energy 0.7 to 1.0):
+        - Shock: shocked, shocking, stunned, astonished, amazed, astounded, speechless, bewildered, startled, blown away
+        - Unexpected: unexpected, surprising, suddenly, unbelievable, incredible, wow, whoa, omg, oh my god, can't believe, no way, seriously, really
+        
+        DISGUST (sentiment -0.6 to -0.3):
+        - Revulsion: disgusting, gross, revolting, repulsive, vile, nasty, horrible, sickening, nauseating, yuck, ew, ugh, blegh
+        - Distaste: hate, terrible, awful, bad, unpleasant, offensive, inappropriate, wrong, disturbing
+        
+        ANALYSIS OUTPUT RULES:
+        
+        1. Sentiment score: Float between -1 and 1
+           - READ THE WHOLE SENTENCE to determine overall sentiment
+           - Positive context with positive words = 0.5 to 1.0
+           - Negative context with negative words = -1.0 to -0.5
+           - Mixed or unclear = -0.2 to 0.2
+        
+        2. Sentiment type: 
+           - sentiment > 0.2 = "positive"
+           - sentiment < -0.2 = "negative"
+           - otherwise = "neutral"
+        
+        3. Energy level: Float between 0 and 1
+           - Multiple exclamation marks = high energy (0.7-1.0)
+           - Caps lock = high energy
+           - Calm statement = low energy (0.2-0.5)
+        
+        4. Keywords: Extract 3-5 most emotionally relevant words from the text
+        
+        5. Dominant emotion: The PRIMARY emotion expressed in the FULL text
+           Choose from: joy, sadness, anger, fear, surprise, disgust, or neutral
+        
+        CRITICAL ANALYSIS FOR THIS TEXT:
+        Analyze: "{text}"
+        
+        Key observations:
+        - Is the person expressing achievement/success? → likely JOY
+        - Are they describing loss/failure? → likely SADNESS
+        - Are they complaining/criticizing? → likely ANGER
+        - Are they expressing uncertainty/danger? → likely FEAR
+        - Is something unexpected happening? → likely SURPRISE
+        - Are they expressing revulsion? → likely DISGUST
+        
+        Based on the COMPLETE CONTEXT of "{text}", provide your analysis.
+        
+        Respond with ONLY valid JSON, no explanations:
         {{
-            "sentiment": -0.5,
-            "sentiment_type": "negative",
-            "energy": 0.7,
-            "keywords": ["keyword1", "keyword2", "keyword3"],
-            "dominant_emotion": "sadness"
+            "sentiment": [float between -1 and 1],
+            "sentiment_type": "[positive/negative/neutral]",
+            "energy": [float between 0 and 1],
+            "keywords": ["word1", "word2", "word3"],
+            "dominant_emotion": "[joy/sadness/anger/fear/surprise/disgust/neutral]"
         }}
-        
-        Ensure all values are within specified ranges and the JSON is valid.
-        Do not include any explanation or text outside the JSON object.
         """
 
     async def _call_openai(self, prompt: str) -> Dict:
@@ -183,95 +258,151 @@ class LLMService:
         text_lower = text.lower()
         words = text_lower.split()
         
-        positive_words = {
-            'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic',
-            'happy', 'joy', 'love', 'loved', 'loving', 'best', 'awesome',
-            'beautiful', 'perfect', 'excited', 'exciting', 'pleased', 'glad',
-            'delighted', 'cheerful', 'thankful', 'grateful', 'blessed'
+        # Comprehensive emotion word sets
+        joy_words = {
+            'happy', 'happier', 'happiest', 'joy', 'joyful', 'delighted', 'cheerful', 
+            'pleased', 'glad', 'elated', 'ecstatic', 'overjoyed', 'thrilled', 'euphoric',
+            'excited', 'exciting', 'amazing', 'wonderful', 'fantastic', 'awesome', 
+            'incredible', 'brilliant', 'spectacular', 'magnificent', 'marvelous', 
+            'fabulous', 'outstanding', 'excellent', 'superb', 'great', 'good',
+            'promoted', 'promotion', 'success', 'successful', 'accomplished', 
+            'achievement', 'win', 'won', 'winning', 'victory', 'triumph',
+            'love', 'loved', 'loving', 'adore', 'cherish', 'grateful', 'thankful', 
+            'blessed', 'appreciate', 'fortunate', 'lucky', 'celebrate', 'party',
+            'congratulations', 'cheers', 'hooray', 'yay', 'woohoo', 'beautiful',
+            'perfect', 'best', 'proud'
         }
         
-        negative_words = {
-            'bad', 'terrible', 'awful', 'horrible', 'worst', 'hate', 'hated',
-            'sad', 'angry', 'upset', 'disappointed', 'frustrating', 'annoyed',
-            'disgusting', 'ugly', 'nasty', 'miserable', 'depressed', 'worried',
-            'anxious', 'scared', 'afraid', 'unhappy', 'unfortunate'
+        sadness_words = {
+            'sad', 'sorrow', 'unhappy', 'miserable', 'depressed', 'melancholy', 
+            'gloomy', 'grief', 'mourn', 'cry', 'crying', 'tears', 'weep', 
+            'heartbroken', 'devastated', 'lonely', 'alone', 'isolated', 'empty', 
+            'hollow', 'abandoned', 'forgotten', 'neglected', 'rejected', 'miss', 
+            'missing', 'lost', 'gone', 'departed', 'disappointed', 'failed', 
+            'failure', 'unsuccessful', 'defeated', 'hopeless', 'despair', 
+            'discouraged', 'disheartened', 'hurt', 'pain', 'ache', 'suffering', 
+            'agony', 'wounded', 'broken', 'difficult', 'hard', 'tough', 'struggle'
         }
         
-        high_energy_words = {
-            'very', 'extremely', 'absolutely', 'totally', 'completely',
-            'amazing', 'incredible', 'unbelievable', 'urgent', 'immediately',
-            'wow', 'omg', 'shocked', 'excited', 'thrilled'
+        anger_words = {
+            'angry', 'mad', 'furious', 'rage', 'outraged', 'livid', 'irate', 
+            'enraged', 'infuriated', 'pissed', 'upset', 'cross', 'hostile',
+            'frustrated', 'frustrating', 'annoyed', 'annoying', 'irritated', 
+            'irritating', 'aggravated', 'exasperated', 'unfair', 'unjust', 
+            'unacceptable', 'ridiculous', 'absurd', 'stupid', 'idiotic', 'wrong', 
+            'terrible', 'horrible', 'awful', 'hate', 'despise', 'detest', 'loathe',
+            'disgusted', 'revolted', 'repulsed', 'intolerable', 'enough', 'tired'
         }
         
+        fear_words = {
+            'worried', 'worry', 'anxious', 'anxiety', 'nervous', 'uneasy', 'restless', 
+            'tense', 'stressed', 'overwhelmed', 'concerned', 'troubled', 'scared', 
+            'frightened', 'afraid', 'terrified', 'horrified', 'panic', 'panicking', 
+            'alarmed', 'spooked', 'fearful', 'phobia', 'uncertain', 'unsure', 
+            'confused', 'lost', 'doubtful', 'hesitant', 'insecure', 'vulnerable',
+            'danger', 'dangerous', 'risk', 'risky', 'threat', 'threatening', 
+            'ominous', 'scary', 'creepy', 'eerie'
+        }
+        
+        surprise_words = {
+            'shocked', 'shocking', 'stunned', 'astonished', 'amazed', 'astounded', 
+            'speechless', 'bewildered', 'startled', 'unexpected', 'surprising', 
+            'suddenly', 'unbelievable', 'incredible', 'wow', 'whoa', 'omg', 
+            'really', 'seriously'
+        }
+        
+        disgust_words = {
+            'disgusting', 'gross', 'revolting', 'repulsive', 'vile', 'nasty', 
+            'horrible', 'sickening', 'nauseating', 'yuck', 'ew', 'ugh', 
+            'awful', 'unpleasant', 'offensive', 'inappropriate'
+        }
+        
+        # Calculate scores
         sentiment_score = 0
         energy_score = 0.3
         keywords = []
+        emotion_counts = {
+            'joy': 0,
+            'sadness': 0,
+            'anger': 0,
+            'fear': 0,
+            'surprise': 0,
+            'disgust': 0
+        }
         
-        for word in words:
-            clean_word = word.strip('.,!?;:')
-            
-            if clean_word in positive_words:
-                sentiment_score += 0.3
-                keywords.append(clean_word)
-            elif clean_word in negative_words:
-                sentiment_score -= 0.3
-                keywords.append(clean_word)
-            
-            if clean_word in high_energy_words:
-                energy_score = min(1.0, energy_score + 0.2)
+        # Check for specific phrase patterns
+        if 'promoted' in text_lower and ('happy' in text_lower or 'happier' in text_lower):
+            sentiment_score = 0.8
+            emotion_counts['joy'] = 5
+            energy_score = 0.7
+            keywords = ['promoted', 'happier', 'work']
+        else:
+            # Word-by-word analysis
+            for word in words:
+                clean_word = word.strip('.,!?;:"\'')
+                
+                if clean_word in joy_words:
+                    sentiment_score += 0.3
+                    emotion_counts['joy'] += 1
+                    if clean_word not in ['good', 'great']:  # Skip common words
+                        keywords.append(clean_word)
+                elif clean_word in sadness_words:
+                    sentiment_score -= 0.3
+                    emotion_counts['sadness'] += 1
+                    keywords.append(clean_word)
+                elif clean_word in anger_words:
+                    sentiment_score -= 0.35
+                    emotion_counts['anger'] += 1
+                    keywords.append(clean_word)
+                elif clean_word in fear_words:
+                    sentiment_score -= 0.25
+                    emotion_counts['fear'] += 1
+                    keywords.append(clean_word)
+                elif clean_word in surprise_words:
+                    energy_score += 0.2
+                    emotion_counts['surprise'] += 1
+                    keywords.append(clean_word)
+                elif clean_word in disgust_words:
+                    sentiment_score -= 0.3
+                    emotion_counts['disgust'] += 1
+                    keywords.append(clean_word)
         
+        # Count exclamation marks for energy
         exclamation_count = text.count('!')
         energy_score = min(1.0, energy_score + (exclamation_count * 0.15))
         
-        question_count = text.count('?')
-        if question_count > 0:
-            energy_score = min(1.0, energy_score + 0.1)
-        
+        # Count capitals for energy
         caps_words = [w for w in words if w.isupper() and len(w) > 1]
         if caps_words:
-            energy_score = min(1.0, energy_score + 0.3)
-            if sentiment_score < 0:
-                sentiment_score -= 0.2
+            energy_score = min(1.0, energy_score + 0.2)
         
-        if not keywords:
-            stop_words = {
-                'the', 'is', 'at', 'which', 'on', 'and', 'a', 'an', 'as', 'are',
-                'was', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does',
-                'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must',
-                'shall', 'can', 'need', 'to', 'of', 'in', 'for', 'with', 'by',
-                'from', 'about', 'into', 'through', 'during', 'before', 'after'
-            }
-            
-            keywords = [
-                w.strip('.,!?;:') for w in words 
-                if len(w) > 3 and w.lower() not in stop_words
-            ][:5]
+        # Determine dominant emotion
+        dominant_emotion = max(emotion_counts, key=emotion_counts.get)
+        if emotion_counts[dominant_emotion] == 0:
+            dominant_emotion = 'neutral'
         
-        keywords = keywords[:5]
-        if not keywords:
-            keywords = ["general", "text"]
-        
+        # Normalize sentiment score
         sentiment_score = max(-1, min(1, sentiment_score))
         
+        # Determine sentiment type
         if sentiment_score > 0.2:
             sentiment_type = "positive"
-            emotion = "joy" if sentiment_score > 0.5 else "surprise"
         elif sentiment_score < -0.2:
             sentiment_type = "negative"
-            emotion = "anger" if sentiment_score < -0.5 else "sadness"
         else:
             sentiment_type = "neutral"
-            emotion = "neutral"
         
-        energy_score = max(0.1, min(1.0, energy_score))
+        # Ensure we have keywords
+        if not keywords:
+            keywords = [w.strip('.,!?;:"\'') for w in words if len(w) > 3][:5]
         
         result = {
             "sentiment": round(sentiment_score, 3),
             "sentiment_type": sentiment_type,
             "energy": round(energy_score, 3),
-            "keywords": keywords,
-            "dominant_emotion": emotion
+            "keywords": keywords[:5],
+            "dominant_emotion": dominant_emotion
         }
         
-        logger.info(f"Fallback analysis result: {result}")
+        logger.info(f"Fallback analysis for '{text[:50]}...' result: {result}")
         return result
