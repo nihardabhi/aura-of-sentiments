@@ -98,9 +98,16 @@ class LLMService:
         - Fear: scared, frightened, afraid, terrified, horrified, panic, alarmed, fearful
         - Uncertainty: uncertain, unsure, confused, doubtful, hesitant, insecure, vulnerable
         
-        SURPRISE:
-        - Shock: shocked, stunned, astonished, amazed, astounded, speechless, bewildered, startled
-        - Unexpected: unexpected, surprising, suddenly, unbelievable, incredible, wow, whoa
+        SURPRISE (sentiment varies based on context):
+        - Positive Surprise (sentiment 0.3 to 0.7): wow, amazing, unbelievable, incredible, astonishing (in positive context)
+        - Negative Surprise (sentiment -0.5 to -0.2): shocked, stunned, horrified (in negative context)
+        - Neutral Surprise (sentiment -0.1 to 0.1): unexpected, surprising, suddenly
+        - General: shocked, stunned, astonished, amazed, astounded, speechless, bewildered, startled
+        
+        IMPORTANT: Surprise should affect sentiment based on context:
+        - If surprise words appear with positive words → positive sentiment (0.3 to 0.7)
+        - If surprise words appear with negative words → negative sentiment (-0.5 to -0.2)
+        - If surprise appears alone → slight positive sentiment (0.1 to 0.3) as surprise is often mildly exciting
         
         DISGUST (sentiment -0.6 to -0.3):
         - Revulsion: disgusting, gross, revolting, repulsive, vile, nasty, sickening, nauseating
@@ -108,6 +115,7 @@ class LLMService:
         Analyze the COMPLETE CONTEXT of "{text}" and provide:
         
         1. Sentiment score: Float between -1 (very negative) and 1 (very positive)
+           - For SURPRISE: Don't leave at 0! Consider context to determine if positive or negative surprise
         2. Sentiment type: "positive" if > 0.2, "negative" if < -0.2, else "neutral"
         3. Keywords: 3-5 most emotionally relevant words
         4. Dominant emotion: joy, sadness, anger, fear, surprise, disgust, or neutral
@@ -159,6 +167,27 @@ class LLMService:
             sentiment = float(response.get("sentiment", 0))
             validated["sentiment"] = max(-1, min(1, sentiment))
             
+            # Get dominant emotion first to check for surprise
+            emotion = response.get("dominant_emotion", "").lower()
+            valid_emotions = ["joy", "sadness", "anger", "fear", "surprise", "disgust", "neutral"]
+            
+            if emotion not in valid_emotions:
+                if validated["sentiment"] > 0.5:
+                    emotion = "joy"
+                elif validated["sentiment"] > 0:
+                    emotion = "surprise"
+                elif validated["sentiment"] < -0.5:
+                    emotion = "anger"
+                elif validated["sentiment"] < 0:
+                    emotion = "sadness"
+                else:
+                    emotion = "neutral"
+            validated["dominant_emotion"] = emotion
+            
+            if emotion == "surprise" and abs(validated["sentiment"]) < 0.1:
+                validated["sentiment"] = 0.2
+                logger.debug("Adjusted neutral surprise to slight positive sentiment")
+            
             sentiment_type = response.get("sentiment_type", "").lower()
             if sentiment_type not in ["positive", "negative", "neutral"]:
                 if validated["sentiment"] > 0.2:
@@ -180,22 +209,6 @@ class LLMService:
             
             if not validated["keywords"]:
                 validated["keywords"] = ["general"]
-            
-            emotion = response.get("dominant_emotion", "").lower()
-            valid_emotions = ["joy", "sadness", "anger", "fear", "surprise", "disgust", "neutral"]
-            
-            if emotion not in valid_emotions:
-                if validated["sentiment"] > 0.5:
-                    emotion = "joy"
-                elif validated["sentiment"] > 0:
-                    emotion = "surprise"
-                elif validated["sentiment"] < -0.5:
-                    emotion = "anger"
-                elif validated["sentiment"] < 0:
-                    emotion = "sadness"
-                else:
-                    emotion = "neutral"
-            validated["dominant_emotion"] = emotion
             
             logger.debug(f"Validated response: {validated}")
             return validated
@@ -237,12 +250,13 @@ class LLMService:
         fear_words = {
             'worried', 'anxious', 'nervous', 'uneasy', 'tense', 'stressed', 
             'scared', 'frightened', 'afraid', 'terrified', 'horrified', 'panic',
-            'uncertain', 'unsure', 'confused', 'doubtful', 'insecure'
+            'uncertain', 'unsure', 'confused', 'doubtful', 'insecure', 'fearful'
         }
         
         surprise_words = {
             'shocked', 'stunned', 'astonished', 'amazed', 'astounded', 
-            'speechless', 'bewildered', 'unexpected', 'surprising', 'wow', 'whoa', 'fearful'
+            'speechless', 'bewildered', 'unexpected', 'surprising', 'wow', 
+            'whoa', 'unbelievable', 'incredible', 'startled', 'surprised'
         }
         
         disgust_words = {
@@ -262,6 +276,10 @@ class LLMService:
             'disgust': 0
         }
         
+        # Track if we have positive or negative context with surprise
+        has_positive_context = False
+        has_negative_context = False
+        
         # Check for specific phrase patterns
         if 'promoted' in text_lower and ('happy' in text_lower or 'happier' in text_lower):
             sentiment_score = 0.8
@@ -274,32 +292,55 @@ class LLMService:
                 if clean_word in joy_words:
                     sentiment_score += 0.3
                     emotion_counts['joy'] += 1
+                    has_positive_context = True
                     if clean_word not in ['good', 'great']:
                         keywords.append(clean_word)
                 elif clean_word in sadness_words:
                     sentiment_score -= 0.3
                     emotion_counts['sadness'] += 1
+                    has_negative_context = True
                     keywords.append(clean_word)
                 elif clean_word in anger_words:
                     sentiment_score -= 0.35
                     emotion_counts['anger'] += 1
+                    has_negative_context = True
                     keywords.append(clean_word)
                 elif clean_word in fear_words:
                     sentiment_score -= 0.25
                     emotion_counts['fear'] += 1
+                    has_negative_context = True
                     keywords.append(clean_word)
                 elif clean_word in surprise_words:
                     emotion_counts['surprise'] += 1
+                    # Surprise affects sentiment based on context
+                    if has_positive_context:
+                        sentiment_score += 0.2
+                    elif has_negative_context:
+                        sentiment_score -= 0.15
+                    else:
+                        # Default surprise is slightly positive (exciting)
+                        sentiment_score += 0.1
                     keywords.append(clean_word)
                 elif clean_word in disgust_words:
                     sentiment_score -= 0.3
                     emotion_counts['disgust'] += 1
+                    has_negative_context = True
                     keywords.append(clean_word)
         
         # Determine dominant emotion
         dominant_emotion = max(emotion_counts, key=emotion_counts.get)
         if emotion_counts[dominant_emotion] == 0:
             dominant_emotion = 'neutral'
+        
+        if dominant_emotion == 'surprise':
+            # If surprise is dominant but sentiment is neutral, make it slightly positive
+            if abs(sentiment_score) < 0.1:
+                sentiment_score = 0.2  # Default surprise to slight positive
+            # Amplify surprise sentiment slightly
+            elif sentiment_score > 0:
+                sentiment_score = min(1, sentiment_score * 1.2)
+            else:
+                sentiment_score = max(-1, sentiment_score * 1.2)
         
         # Normalize sentiment score
         sentiment_score = max(-1, min(1, sentiment_score))

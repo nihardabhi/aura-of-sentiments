@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 
 const AuraVisualization = ({ 
   sentiment = 0, 
@@ -21,7 +21,7 @@ const AuraVisualization = ({
   const lastEmotionChangeRef = useRef(0);
   const emotionIntensityRef = useRef(0);
   
-  // 🌌 Emotion Aura Palette — Harmonized & Emotionally Tuned (v2)
+  // Emotion Aura Palette — Harmonized & Emotionally Tuned
   const emotionColors = {
     joy: {
       primary: [255, 215, 0],       // Bright golden yellow (pure joy)
@@ -44,7 +44,7 @@ const AuraVisualization = ({
     },
 
     anger: {
-      primary: [139, 0, 0], // Crimson red
+      primary: [139, 0, 0],         // Crimson red
       secondary: [220, 20, 60],     // Crimson
       tertiary: [255, 99, 71],      // Hot coral
       glow: [255, 140, 105],        // Radiant red-orange glow

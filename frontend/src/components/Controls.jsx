@@ -9,7 +9,7 @@ const Controls = ({ isRecording, onStartStop, disabled }) => {
       height: '100%',
       gap: '20px'
     }}>
-      {/* Circular Record Button - CENTERED */}
+      {/* Circular Record Button */}
       <div className="record-button-container" style={{
         display: 'flex',
         justifyContent: 'center',
@@ -42,7 +42,7 @@ const Controls = ({ isRecording, onStartStop, disabled }) => {
         </div>
       </div>
       
-      {/* Status Display - Below Button */}
+      {/* Status Display */}
       <div className="control-stats">
         <div className="stat-item">
           <span className="stat-label">STATUS</span>

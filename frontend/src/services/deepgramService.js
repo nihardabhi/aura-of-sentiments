@@ -62,7 +62,7 @@ export class DeepgramService {
       this.socket.binaryType = 'arraybuffer';
 
       this.socket.onopen = () => {
-        console.log('✅ Deepgram WebSocket connected');
+        console.log('Deepgram WebSocket connected');
         this.onStatus('connected');
         this.reconnectAttempts = 0;
         this.isConnecting = false;
@@ -97,7 +97,7 @@ export class DeepgramService {
       };
 
       this.socket.onerror = (error) => {
-        console.error('❌ Deepgram WebSocket error:', error);
+        console.error('Deepgram WebSocket error:', error);
         this.onError(new Error('WebSocket connection error'));
         this.onStatus('error');
         this.isConnecting = false;
@@ -111,7 +111,7 @@ export class DeepgramService {
         
         // Check for auth error
         if (event.code === 1008) {
-          console.error('❌ Invalid Deepgram API key!');
+          console.error('Invalid Deepgram API key!');
           this.onError(new Error('Invalid API key'));
         }
         
@@ -128,7 +128,7 @@ export class DeepgramService {
       };
 
     } catch (error) {
-      console.error('❌ Error accessing microphone:', error);
+      console.error('Error accessing microphone:', error);
       this.onError(error);
       this.onStatus('error');
       this.isConnecting = false;
@@ -209,9 +209,9 @@ export class DeepgramService {
       this.source.connect(this.processor);
       this.processor.connect(this.audioContext.destination);
       
-      console.log('✅ Audio recording started');
+      console.log('Audio recording started');
     } catch (error) {
-      console.error('❌ Error starting recording:', error);
+      console.error('Error starting recording:', error);
       this.onError(error);
     }
   }

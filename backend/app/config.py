@@ -34,7 +34,6 @@ class Config:
     
     @classmethod
     def validate(cls) -> None:
-        """Validate configuration on startup"""
         if not cls.OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY is required. Please set it in your .env file")
         
