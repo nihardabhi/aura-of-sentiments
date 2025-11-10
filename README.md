@@ -7,11 +7,10 @@
 ### 🎤 **Real-time Speech Recognition**
 - Live transcription using Deepgram's Nova-2 model
 - WebSocket streaming for instant feedback
-- Automatic speech detection with VAD (Voice Activity Detection)
 
 ### 🧠 **Advanced Sentiment Analysis**
 - OpenAI-powered emotion detection
-- Seven emotion categories: Joy, Sadness, Anger, Fear, Surprise, Disgust, Neutral
+- Six emotion categories: Joy, Sadness, Anger, Fear, Surprise, Disgust
 - Context-aware sentiment scoring (-1 to +1 scale)
 - Intelligent keyword extraction
 
