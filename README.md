@@ -43,3 +43,37 @@
 - **Pydantic** - Data validation
 - **asyncio** - Asynchronous processing
 - **CORS** - Cross-origin support
+
+## 📦 Dependencies
+
+### Frontend Dependencies
+```json
+{
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "axios": "1.13.2",
+    "framer-motion": "10.18.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-p5": "1.4.1",
+    "react-scripts": "5.0.1",
+    "web-vitals": "3.5.2"
+  }
+}
+```
+
+### Backend Requirements
+```txt
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-dotenv==1.2.1
+openai==1.3.0
+anthropic==0.7.0
+google-generativeai==0.3.0
+pydantic==2.5.0
+python-multipart==0.0.6
+httpx==0.25.1
+websockets==12.0
+aiofiles==23.2.1
+```
