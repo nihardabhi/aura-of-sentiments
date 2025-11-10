@@ -69,8 +69,6 @@ fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-dotenv==1.2.1
 openai==1.3.0
-anthropic==0.7.0
-google-generativeai==0.3.0
 pydantic==2.5.0
 python-multipart==0.0.6
 httpx==0.25.1
