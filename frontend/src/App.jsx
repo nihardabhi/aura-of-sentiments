@@ -310,10 +310,8 @@ function App() {
               </div>
             </div>
             
-            {/* Main Content Area - NOW USING COMPONENTS */}
+            
             <div className="content-grid">
-              
-              {/* Live Transcript Panel - Using Component */}
               <div className="panel transcript-panel">
                 <TranscriptDisplay 
                   transcript={transcript}
@@ -321,7 +319,6 @@ function App() {
                 />
               </div>
               
-              {/* Keywords Cloud Panel - Using Component */}
               <div className="panel keywords-panel">
                 <KeywordsDisplay 
                   keywords={keywords}
@@ -330,7 +327,6 @@ function App() {
                 />
               </div>
               
-              {/* Control Center - Using Component */}
               <div className="panel control-panel">
                 <div className="panel-header">
                   <div className="panel-title">

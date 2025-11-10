@@ -86,7 +86,7 @@ body {
   transform: translateY(0);
 }
 
-/* Simplified App Header */
+/*  App Header */
 .app-header {
   text-align: center;
   margin-bottom: 40px;
@@ -113,7 +113,7 @@ body {
   z-index: 2;
 }
 
-/* Simplified Bold Title */
+/*  Bold Title */
 .title-main {
   display: block;
   font-size: 5rem;
@@ -153,7 +153,7 @@ body {
   width: 100%;
 }
 
-/* Metrics Row - Now with 2 cards */
+/* Metrics Row */
 .metrics-row-two {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -557,7 +557,7 @@ body {
   gap: 30px;
 }
 
-/* Simplified Recording Button */
+/* Recording Button */
 .record-button-container {
   position: relative;
 }
@@ -567,7 +567,7 @@ body {
   display: inline-block;
 }
 
-/* Simple Bold Record Button */
+/* Record Button */
 .record-button {
   width: 140px;
   height: 140px;
@@ -634,7 +634,7 @@ body {
   color: #ffffff;
 }
 
-/* Simple Recording Indicator */
+/* Recording Indicator */
 .recording-indicator {
   text-align: center;
   margin-top: 20px;
