@@ -1,66 +1,57 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-
 const Controls = ({ isRecording, onStartStop, disabled }) => {
   return (
-    <motion.div 
-      className="controls"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.button
-        className={`control-button ${isRecording ? 'recording' : ''} ${disabled ? 'disabled' : ''}`}
-        onClick={onStartStop}
-        disabled={disabled}
-        whileHover={!disabled ? { scale: 1.05 } : {}}
-        whileTap={!disabled ? { scale: 0.95 } : {}}
-      >
-        <div className="button-content">
-          {isRecording ? (
-            <>
-              <span className="recording-indicator"></span>
-              <span>Stop Recording</span>
-            </>
-          ) : disabled ? (
-            <span>Connecting...</span>
-          ) : (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
-              </svg>
-              <span>Start Recording</span>
-            </>
-          )}
-        </div>
-      </motion.button>
-      
-      {isRecording && (
-        <motion.div
-          className="recording-status"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <span className="pulse"></span>
-          <span>Listening...</span>
-        </motion.div>
-      )}
-      
-      <motion.div className="controls-hint">
-        {!isRecording && !disabled && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
-            transition={{ delay: 1 }}
+    <div className="controls-wrapper" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: '100%',
+      gap: '20px'
+    }}>
+      {/* Circular Record Button - CENTERED */}
+      <div className="record-button-container" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <div className={`record-button-wrapper ${isRecording ? 'recording' : ''}`}>
+          <button
+            className={`record-button ${isRecording ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+            onClick={onStartStop}
+            disabled={disabled}
+            style={{
+              transform: 'none',
+              transition: 'background-color 0.3s, box-shadow 0.3s'
+            }}
           >
-            Click to start speaking and watch your emotions come alive
-          </motion.p>
-        )}
-      </motion.div>
-    </motion.div>
+            <div className="button-inner">
+              {isRecording ? (
+                <>
+                  <span className="button-icon">⏹️</span>
+                  <span className="button-text">STOP</span>
+                </>
+              ) : (
+                <>
+                  <span className="button-icon">🎤</span>
+                  <span className="button-text">RECORD</span>
+                </>
+              )}
+            </div>
+          </button>
+        </div>
+      </div>
+      
+      {/* Status Display - Below Button */}
+      <div className="control-stats">
+        <div className="stat-item">
+          <span className="stat-label">STATUS</span>
+          <span className={`stat-value ${isRecording ? 'active' : ''}`}>
+            {isRecording ? 'Recording' : 'Ready'}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 };
 

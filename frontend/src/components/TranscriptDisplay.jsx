@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TranscriptDisplay = ({ transcript, isProcessing }) => {
@@ -11,41 +11,55 @@ const TranscriptDisplay = ({ transcript, isProcessing }) => {
   }, [transcript]);
 
   return (
-    <motion.div 
-      className="transcript-display"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="transcript-header">
-        <h3>Live Transcript</h3>
+    <>
+      <div className="panel-header">
+        <div className="panel-title">
+          <span className="panel-icon">📝</span>
+          <h3>Live Transcript</h3>
+        </div>
         {isProcessing && (
-          <motion.div
-            className="processing-dot"
-            animate={{ opacity: [1, 0.3, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          />
+          <div className="processing-badge">
+            <span className="processing-dot"></span>
+            Processing
+          </div>
         )}
       </div>
-      <div className="transcript-content" ref={containerRef}>
-        <AnimatePresence>
-          {transcript.map((item, index) => (
-            <motion.p
-              key={`${item.timestamp}-${index}`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-              className="transcript-item"
+      <div className="panel-body">
+        <div className="transcript-scroll" ref={containerRef}>
+          {transcript.length === 0 ? (
+            <motion.div 
+              className="empty-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
             >
-              <span className="transcript-time">
-                {new Date(item.timestamp).toLocaleTimeString()}
-              </span>
-              <span className="transcript-text">{item.text}</span>
-            </motion.p>
-          ))}
-        </AnimatePresence>
+              <div className="empty-icon">🎤</div>
+              <p>Your words will appear here in real-time</p>
+              <p className="empty-hint">Press the record button to begin</p>
+            </motion.div>
+          ) : (
+            <AnimatePresence>
+              {transcript.map((item, index) => (
+                <motion.div
+                  key={`${item.timestamp}-${index}`}
+                  className="transcript-entry"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="transcript-meta">
+                    <span className="transcript-time">
+                      {new Date(item.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="transcript-text">{item.text}</div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+        </div>
       </div>
-    </motion.div>
+    </>
   );
 };
 
