@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AuraVisualization from './components/AuraVisualization';
 import TranscriptDisplay from './components/TranscriptDisplay';
 import KeywordsDisplay from './components/KeywordsDisplay';
@@ -9,7 +9,7 @@ import { processText } from './services/apiService';
 import './styles/App.css';
 
 function App() {
-  // State management (energy removed)
+  // State management
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState([]);
   const [sentiment, setSentiment] = useState(0);
@@ -17,6 +17,7 @@ function App() {
   const [keywords, setKeywords] = useState([]);
   const [dominantEmotion, setDominantEmotion] = useState('neutral');
   const [showInterface, setShowInterface] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
   
   // Refs
   const deepgramServiceRef = useRef(null);
@@ -37,7 +38,7 @@ function App() {
       const service = new DeepgramService(
         process.env.REACT_APP_DEEPGRAM_API_KEY,
         handleTranscript,
-        () => {},
+        setConnectionStatus,
         (error) => console.error('Deepgram error:', error)
       );
       deepgramServiceRef.current = service;
@@ -80,7 +81,7 @@ function App() {
     processingRef.current = false;
   }, []);
   
-  // Animate state updates (energy removed)
+  // Animate state updates
   const animateStateUpdate = useCallback((response) => {
     requestAnimationFrame(() => {
       const steps = 30;
@@ -115,7 +116,7 @@ function App() {
     });
   }, [sentiment]);
   
-  // Generate fallback sentiment (energy removed)
+  // Generate fallback sentiment
   const generateFallbackSentiment = useCallback((text) => {
     const positiveWords = ['good', 'great', 'happy', 'love', 'excellent', 'wonderful', 'amazing', 'fantastic', 'beautiful', 'perfect'];
     const negativeWords = ['bad', 'sad', 'angry', 'hate', 'terrible', 'awful', 'horrible', 'disgusting', 'frustrating', 'disappointing'];
@@ -211,6 +212,7 @@ function App() {
         
       } catch (error) {
         console.error('Failed to start recording:', error);
+        setConnectionStatus('error');
       }
     } else if (deepgramServiceRef.current) {
       deepgramServiceRef.current.disconnect();
@@ -233,6 +235,9 @@ function App() {
     };
     return icons[dominantEmotion] || '😐';
   };
+
+  // Calculate energy from sentiment magnitude
+  const energy = Math.abs(sentiment);
 
   return (
     <ErrorBoundary>
@@ -305,85 +310,27 @@ function App() {
               </div>
             </div>
             
-            {/* Main Content Area */}
+            {/* Main Content Area - NOW USING COMPONENTS */}
             <div className="content-grid">
               
-              {/* Live Transcript Panel */}
+              {/* Live Transcript Panel - Using Component */}
               <div className="panel transcript-panel">
-                <div className="panel-header">
-                  <div className="panel-title">
-                    <span className="panel-icon">📝</span>
-                    <h3>Live Transcript</h3>
-                  </div>
-                  {processingRef.current && (
-                    <div className="processing-badge">
-                      <span className="processing-dot"></span>
-                      Processing
-                    </div>
-                  )}
-                </div>
-                <div className="panel-body">
-                  <div className="transcript-scroll">
-                    {transcript.length === 0 ? (
-                      <div className="empty-state">
-                        <div className="empty-icon">🎤</div>
-                        <p>Your words will appear here in real-time</p>
-                        <p className="empty-hint">Press the record button to begin</p>
-                      </div>
-                    ) : (
-                      transcript.map((item, index) => (
-                        <div key={`${item.timestamp}-${index}`} className="transcript-entry">
-                          <div className="transcript-meta">
-                            <span className="transcript-time">
-                              {new Date(item.timestamp).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          <div className="transcript-text">{item.text}</div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                <TranscriptDisplay 
+                  transcript={transcript}
+                  isProcessing={processingRef.current}
+                />
               </div>
               
-              {/* Keywords Cloud Panel */}
+              {/* Keywords Cloud Panel - Using Component */}
               <div className="panel keywords-panel">
-                <div className="panel-header">
-                  <div className="panel-title">
-                    <span className="panel-icon">🏷️</span>
-                    <h3>Keyword Analysis</h3>
-                  </div>
-                  <div className="keyword-count">{keywords.length} topics</div>
-                </div>
-                <div className="panel-body">
-                  <div className="keywords-container">
-                    {keywords.length === 0 ? (
-                      <div className="empty-state">
-                        <div className="empty-icon">💭</div>
-                        <p>Keywords will be extracted as you speak</p>
-                      </div>
-                    ) : (
-                      <div className="keywords-3d-cloud">
-                        {keywords.map((keyword, index) => (
-                          <div
-                            key={`${keyword}-${index}`}
-                            className="keyword-3d"
-                            style={{
-                              '--delay': `${index * 0.1}s`,
-                              '--size': `${1 + Math.random() * 0.4}`,
-                            }}
-                          >
-                            <span className="keyword-text">{keyword}</span>
-                            <div className="keyword-glow"></div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <KeywordsDisplay 
+                  keywords={keywords}
+                  sentiment={sentiment}
+                  energy={energy}
+                />
               </div>
               
-              {/* Control Center */}
+              {/* Control Center - Using Component */}
               <div className="panel control-panel">
                 <div className="panel-header">
                   <div className="panel-title">
@@ -392,49 +339,14 @@ function App() {
                   </div>
                 </div>
                 <div className="panel-body control-body">
-                  <div className="record-button-container">
-                    <div className={`record-button-wrapper ${isRecording ? 'recording' : ''}`}>
-                      <button
-                        className={`record-button ${isRecording ? 'active' : ''}`}
-                        onClick={handleStartStop}
-                      >
-                        <div className="button-inner">
-                          {isRecording ? (
-                            <>
-                              <span className="button-icon">⏹️</span>
-                              <span className="button-text">STOP</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="button-icon">🎤</span>
-                              <span className="button-text">RECORD</span>
-                            </>
-                          )}
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {isRecording && (
-                    <div className="recording-indicator">
-                      <div className="sound-wave">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span>
-                      </div>
-                      <p>Listening to your voice...</p>
-                    </div>
-                  )}
-                  
-                  <div className="control-stats">
-                    <div className="stat-item">
-                      <span className="stat-label">Status</span>
-                      <span className={`stat-value ${isRecording ? 'active' : ''}`}>
-                        {isRecording ? 'Recording' : 'Ready'}
-                      </span>
-                    </div>
-                  </div>
+                  <Controls 
+                    isRecording={isRecording}
+                    onStartStop={handleStartStop}
+                    disabled={connectionStatus === 'connecting'}
+                  />
                 </div>
               </div>
+              
             </div>
           </div>
         </div>
