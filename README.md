@@ -1,5 +1,8 @@
 # aura-of-sentiments
 
+[Watch Demo Video]([https://your-video-link.com](https://drive.google.com/file/d/1tpwR8ZZkIyxRROOVuNBGIcM6A2-mjuhs/view?usp=drive_link))
+
+
 **Real-time Emotional Intelligence Visualization System**
 
 ## ✨ Features
